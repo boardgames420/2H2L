@@ -1,0 +1,134 @@
+name: Post Games Poll
+
+on:
+  schedule:
+    - cron: "0 8 * * *"  # 09:00 CET (08:00 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  post_poll:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq and curl
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+
+      - name: Check if today is 3 days before next event (UTC)
+        id: check_event_day
+        run: |
+          set -euo pipefail
+          NEXT_EVENT_DATE=$(jq -r '.date' events/upcoming.json)  # e.g., 2025-09-06
+          TODAY_UTC=$(date -u +%F)
+          TARGET_DAY_UTC=$(date -u -d "$NEXT_EVENT_DATE -3 days" +%F)
+
+          echo "Next event date: $NEXT_EVENT_DATE"
+          echo "Today (UTC):    $TODAY_UTC"
+          echo "Target (UTC):   $TARGET_DAY_UTC"
+
+          if [ "$TODAY_UTC" = "$TARGET_DAY_UTC" ]; then
+            echo "should_post=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_post=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Exit if not time to post
+        if: steps.check_event_day.outputs.should_post != 'true'
+        run: exit 0
+
+      - name: Delete previous messages from games channel
+        if: steps.check_event_day.outputs.should_post == 'true'
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+          MESSAGES=$(curl -s -H "Authorization: Bot $TOKEN" \
+            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=100")
+
+          echo "$MESSAGES" | jq -r '.[].id' | while read -r ID; do
+            [ -z "$ID" ] && continue
+            curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$ID" \
+              -H "Authorization: Bot $TOKEN" >/dev/null
+            sleep 0.5
+          done
+
+      - name: Filter games by present owners
+        if: steps.check_event_day.outputs.should_post == 'true'
+        run: |
+          set -euo pipefail
+          # Expecting results/owners_results.json to contain an array 'present' with owner names
+          jq -n \
+            --slurpfile games games/index.json \
+            --slurpfile owners results/owners_results.json \
+            '$games[0] | map(select(.owner as $o | $owners[0].present | index($o)) | select(.comingSoon != true))' > .filtered_games.json
+
+      - name: Post poll message
+        if: steps.check_event_day.outputs.should_post == 'true'
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+          EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
+          GAMES=$(jq -r '.[].slug' .filtered_games.json || true)
+
+          MSG="🎲 **Vote for the week's board game!**\n\nReact with the emoji to vote:\n\n"
+
+          i=0
+          declare -a USED_EMOJIS
+          while read -r SLUG; do
+            [ -z "$SLUG" ] && continue
+            TITLE=$(jq -r '.title' "games/${SLUG}.json")
+            MSG+="${EMOJIS[i]} ${TITLE}\n\n"
+            USED_EMOJIS+=("${EMOJIS[i]}")
+            i=$((i + 1))
+          done <<< "$GAMES"
+
+          # If no games matched, bail gracefully (do NOT send anything)
+          if [ "${#USED_EMOJIS[@]}" -eq 0 ]; then
+            echo "No eligible games to post. Exiting without sending."
+            exit 0
+          fi
+
+          echo -e "$MSG" > poll_message.txt
+          MSG_CONTENT=$(jq -Rs . < poll_message.txt | sed 's/\\\\n/\\n/g')
+
+          RESPONSE=$(curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+            -H "Authorization: Bot $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": $MSG_CONTENT}")
+
+          echo "$RESPONSE" > .games_poll_response.json
+          MESSAGE_ID=$(jq -r '.id' .games_poll_response.json)
+
+          if [ "$MESSAGE_ID" = "null" ] || [ -z "$MESSAGE_ID" ]; then
+            echo "Failed to post poll; not recording poll date."
+            cat .games_poll_response.json
+            exit 1
+          fi
+
+          for EMOJI in "${USED_EMOJIS[@]}"; do
+            ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
+            curl -s -X PUT "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED/@me" \
+              -H "Authorization: Bot $TOKEN" >/dev/null
+            sleep 0.2
+          done
+
+      - name: Commit poll record
+        if: steps.check_event_day.outputs.should_post == 'true'
+        run: |
+          set -euo pipefail
+          NEXT_EVENT_DATE=$(jq -r '.date' events/upcoming.json)
+          echo "$NEXT_EVENT_DATE" > .last_games_poll
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .last_games_poll
+          git commit -m "📌 Record last games poll date" || echo "No changes"
+          git push
