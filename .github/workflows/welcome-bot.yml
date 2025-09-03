@@ -1,0 +1,90 @@
+name: Welcome New Discord Users
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # every 5 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+
+      - name: Ensure data directory
+        run: mkdir -p data
+
+      - name: Fetch messages from welcome channel
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_WELCOME_CHANNEL_ID }}
+        run: |
+          curl -s -H "Authorization: Bot $TOKEN" \
+            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=100" \
+            > data/welcome_messages.json
+
+      - name: Extract user list
+        run: |
+          jq -r '[.[] | select(.author and .author.username) | "\(.author.id):\(.author.username)"] | sort | unique[]' \
+            data/welcome_messages.json > data/current_users.txt
+
+      - name: Prepare previous user list
+        run: |
+          [ -f data/previous_users.txt ] || touch data/previous_users.txt
+
+      - name: Detect new users
+        run: |
+          comm -13 data/previous_users.txt data/current_users.txt > data/new_users.txt
+
+      - name: Exit if no new users
+        id: check_new
+        run: |
+          COUNT=$(wc -l < data/new_users.txt)
+          echo "Found $COUNT new user(s)"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "no_new=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Stop if no new users
+        if: steps.check_new.outputs.no_new == 'true'
+        run: exit 0
+
+      - name: Send welcome message
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_WELCOME_CHANNEL_ID }}
+        run: |
+          USERNAMES=$(cut -d: -f2 data/new_users.txt | grep -v '^\s*$' | paste -sd " and " -)
+
+          if [ -z "$USERNAMES" ]; then
+            echo "No valid usernames found — skipping message."
+            exit 0
+          fi
+
+          MESSAGE="Benvenut@ $USERNAMES in Too High Too Lose!\nScrivi solo una breve presentazione:\n\nCome ti chiami o vuoi essere chiamato?\n\nCome ci hai conosciuti?\n\nHai già giocato a board games?\n\nDopo la tua presentazione, un mod ti assegnerà il ruolo Player per accedere a tutti gli altri canali.\n\nNon usare questo canale per chattare, è riservato esclusivamente alle presentazioni iniziali, appena verrai accettato guarda il canale \`#instructions\` per capire come funzionanano i diversi canali Discord."
+
+
+          echo "$MESSAGE" > .welcome_msg.txt
+          MSG_CONTENT=$(jq -Rs . < .welcome_msg.txt | sed 's/\\\\n/\\n/g')
+
+          curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+            -H "Authorization: Bot $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": $MSG_CONTENT}"
+
+      - name: Update user list
+        run: |
+          sort -u data/current_users.txt > data/previous_users.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/previous_users.txt
+          git commit -m "Update previous Discord user list" || echo "No changes"
+          git push

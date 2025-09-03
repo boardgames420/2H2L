@@ -1,0 +1,81 @@
+name: Collect Games Poll Reactions
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # Every 5 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect_votes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq and curl
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+
+      - name: Get latest poll message from channel
+        id: fetch_message
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+        run: |
+          RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
+            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=1")
+
+          MESSAGE_ID=$(echo "$RESPONSE" | jq -r '.[0].id')
+          echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
+
+          echo "$RESPONSE" | jq '.[0]' > .poll_message.json
+
+      - name: Generate results
+        run: |
+          mkdir -p results/games
+          EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
+
+          jq -r '.reactions[]? | "\(.emoji.name) \(.count)"' .poll_message.json > .reaction_counts.txt || true
+
+          NOW=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          TODAY=$(date -u +'%Y-%m-%d')
+
+          # Filter games based on present owners
+          jq -n \
+            --slurpfile games games/index.json \
+            --slurpfile owners results/owners_results.json \
+            '$games[0] | map(select(.owner as $o | $owners[0].present | index($o)))' > .filtered_games.json
+
+          echo "{" > results/games_results.json
+          echo "  \"votes\": [" >> results/games_results.json
+
+          i=0
+          jq -r '.[].slug' .filtered_games.json | while read -r SLUG; do
+            GAME_JSON="games/${SLUG}.json"
+            TITLE=$(jq -r '.title' "$GAME_JSON")
+            URL=$(jq -r '.url' "$GAME_JSON")
+            EMOJI="${EMOJIS[i]}"
+            RAW=$(grep "$EMOJI" .reaction_counts.txt | awk '{print $2}')
+            VOTES=${RAW:-0}
+            if [ "$VOTES" -gt 0 ]; then VOTES=$((VOTES - 1)); fi
+            [ $i -gt 0 ] && echo "," >> results/games_results.json
+            echo "    {\"slug\": \"$SLUG\", \"title\": \"$TITLE\", \"url\": \"$URL\", \"votes\": $VOTES}" >> results/games_results.json
+            i=$((i + 1))
+          done
+
+          echo "  ]," >> results/games_results.json
+          echo "  \"generatedAt\": \"${NOW}\"" >> results/games_results.json
+          echo "}" >> results/games_results.json
+
+          cp results/games_results.json "results/games/${TODAY}.json"
+
+      - name: Commit results
+        run: |
+          git config --global user.name "poll-bot"
+          git config --global user.email "bot@example.com"
+          git add results/games_results.json results/games/*.json
+          git commit -m "Update game poll results and archive" || echo "No changes to commit."
+          git push || echo "Nothing to push."

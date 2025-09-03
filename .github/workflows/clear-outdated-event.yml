@@ -1,0 +1,54 @@
+name: Clear Outdated Event
+
+on:
+  schedule:
+    - cron: "0 6 * * *"  # Every day at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clear_event:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Replace outdated date with 'NA'
+        run: |
+          FILE="events/upcoming.json"
+
+          if [ ! -f "$FILE" ]; then
+            echo "No upcoming.json file exists."
+            exit 0
+          fi
+
+          EVENT_DATE=$(jq -r '.date // empty' "$FILE")
+
+          if [ -z "$EVENT_DATE" ] || [ "$EVENT_DATE" = "NA" ]; then
+            echo "No valid date to check. Skipping."
+            exit 0
+          fi
+
+          TODAY=$(date +%F)
+
+          if [ "$(date -d "$EVENT_DATE" +%s)" -lt "$(date -d "$TODAY" +%s)" ]; then
+            echo "Date is in the past. Updating to 'NA'."
+            jq '.date = "NA"' "$FILE" > tmp.json && mv tmp.json "$FILE"
+          else
+            echo "Date is in the future. Nothing to change."
+            exit 0
+          fi
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add events/upcoming.json
+          git diff --cached --quiet || git commit -m "🧹 Mark outdated event date as 'NA'"
+          git push
