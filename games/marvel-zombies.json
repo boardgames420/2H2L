@@ -1,0 +1,20 @@
+{
+  "title": "Marvel Zombies: A Zombicide Game",
+  "url": "https://boardgamegeek.com/boardgame/351817/marvel-zombies-a-zombicide-game",
+  "players": "1-6",
+  "time": "60",
+  "owner": "gasca98",
+  "description": "Play as zombified Marvel heroes in cooperative missions against humanity.",
+  "expansions": [
+    {
+      "title": "X-Men Resistance",
+      "url": "https://boardgamegeek.com/boardgame/355200/marvel-zombies-x-men-resistance",
+      "description": "Expansion introducing the X-Men as new playable characters and additional missions."
+    },
+    {
+      "title": "Clash of the Sinister Six",
+      "url": "https://boardgamegeek.com/boardgameexpansion/356524/marvel-zombies-a-zombicide-game-clash-of-the-sinister-six",
+      "description": "Adds the Sinister Six as enemies and allows playing with a seventh player."
+    }
+  ]
+}

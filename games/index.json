@@ -1,0 +1,87 @@
+[
+  {
+    "slug": "blood-rage",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "dune-imperium",
+    "owner": "RushHD",
+    "comingSoon": false
+  },
+  {
+    "slug": "lands-of-evershade",
+    "owner": "gasca98",
+    "comingSoon": true
+  },
+  {
+    "slug": "magic",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "marvel-zombies",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "nemesis-retaliation",
+    "owner": "gasca98",
+    "comingSoon": true
+  },
+  {
+    "slug": "owners",
+    "owner": null,
+    "comingSoon": false
+  },
+  {
+    "slug": "senjutsu",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "skull",
+    "owner": "RushHD",
+    "comingSoon": false
+  },
+  {
+    "slug": "spqrisiko",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "the-witcher",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "unicorn-overlord",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "voidfall",
+    "owner": "RushHD",
+    "comingSoon": false
+  },
+  {
+    "slug": "warhammer-legions",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "warhammer-underworlds-shadespire",
+    "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "world-order",
+    "owner": "RushHD",
+    "comingSoon": true
+  },
+  {
+    "slug": "zombicide-green-horde",
+    "owner": "gasca98",
+    "comingSoon": false
+  }
+]

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Games | 2H2L</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="activities.html">Activities</a></li>
+      <li><a href="games.html">Games</a></li>
+      <li><a href="join.html" class="join-button">Join</a></li>
+    </ul>
+  </nav>
+
+  <div class="games-wrapper">
+    <h1>Games</h1>
+
+    <div class="filter-controls">
+      <label>
+        Players:
+        <select id="playerFilter">
+          <option value="">Any</option>
+          <option value="2">2+</option>
+          <option value="3">3+</option>
+          <option value="4">4+</option>
+          <option value="5">5+</option>
+          <option value="6">6+</option>
+        </select>
+      </label>
+
+      <label>
+        Duration:
+        <select id="timeFilter">
+          <option value="">Any</option>
+          <option value="30">≤ 30'</option>
+          <option value="60">≤ 60'</option>
+          <option value="90">≤ 90'</option>
+          <option value="120">≤ 120'</option>
+        </select>
+      </label>
+
+      <label>
+        Owner:
+        <select id="ownerFilter">
+          <option value="">All</option>
+        </select>
+      </label>
+
+
+      <button id="clearFilters" class="clear-filters">Reset Filters</button>
+    </div>
+  </div>
+
+  <!-- Load game logic from external JS -->
+  <script src="scripts/games.js" defer></script>
+</body>
+</html>

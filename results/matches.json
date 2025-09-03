@@ -1,0 +1,108 @@
+[
+  {
+    "date": "2025-06-23",
+    "game": "the-witcher",
+    "duration": "130'",
+    "players": [
+      { "name": "matteo", "score": 5 },
+      { "name": "gasca98", "score": 4 },
+      { "name": "RushHD", "score": 4 }
+    ]
+  },
+  {
+    "date": "2025-06-30",
+    "game": "blood-rage",
+    "duration": "90'",
+    "players": [
+      { "name": "RushHD", "score": 158 },
+      { "name": "peter", "score": 138 },
+      { "name": "matteo", "score": 107 },
+      { "name": "benny", "score": 72 },
+      { "name": "gasca98", "score": 68 }
+    ]
+  },
+  {
+    "date": "2025-07-07",
+    "game": "warhammer-underworlds-shadespire",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca98", "score": "NA" },
+      { "name": "RushHD", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-07-14",
+    "game": "senjutsu",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-07-19",
+    "game": "senjutsu",
+    "duration": "60'",
+    "players": [
+      { "name": "RushHD", "score": 5 },
+      { "name": "gasca98", "score": 3 }
+    ]
+  },
+  {
+    "date": "2025-07-21",
+    "game": "marvel-zombies",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "benny", "score": "NA" },
+      { "name": "mattana", "score": "NA" },
+      { "name": "edo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-07-31",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "benny", "score": "NA" },
+      { "name": "mattana", "score": "NA" },
+      { "name": "peter", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-08-02",
+    "game": "magic",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "benny", "score": "NA" },
+      { "name": "matteo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-08-04",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "mattana", "score": "NA" },
+      { "name": "edo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-09-01",
+    "game": "dune-imperium",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "mattana", "score": "NA" },
+      { "name": "edo", "score": "NA" }
+    ]
+  }
+]

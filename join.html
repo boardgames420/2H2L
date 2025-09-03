@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Join | 2H2L</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="activities.html">Activities</a></li>
+      <li><a href="games.html">Games</a></li>
+      <li><a href="join.html" class="join-button">Join</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-wrapper join-wrapper">
+    <h1>Join our Discord</h1>
+
+    <p>
+      We're now organizing our board game events and chatting through our <strong>Discord server</strong>!
+    </p>
+
+    <p><strong>To join us:</strong></p>
+
+    <ol>
+      <li>Download the Discord app or use it in your browser: <a href="https://discord.com/download" target="_blank">discord.com</a></li>
+      <li>Log in or create an account</li>
+      <li>Click the button below to join our server</li>
+    </ol>
+
+    <div class="centered-button">
+      <a href="https://discord.com/invite/gdz9dxmQau" target="_blank" class="join-button">
+        <span class="join-main">Join 2H2L</span>
+        <span class="join-sub">on Discord</span>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const copyButton = document.getElementById('copyDiscordLink');
+    copyButton.addEventListener('click', () => {
+      const input = document.getElementById('discordInvite');
+      input.select();
+      input.setSelectionRange(0, 99999);
+      document.execCommand('copy');
+
+      copyButton.textContent = 'Copied!';
+      setTimeout(() => (copyButton.textContent = 'Copy'), 1500);
+    });
+  </script>
+</body>
+</html>

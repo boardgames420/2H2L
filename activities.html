@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Activities | 2H2L</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="icon" type="image/png" href="assets/icons/favicon.png" />
+</head>
+<body>
+  <nav>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="activities.html">Activities</a></li>
+      <li><a href="games.html">Games</a></li>
+      <li><a href="join.html" class="join-button">Join</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-wrapper">
+    <h1>Activities</h1>
+
+    <section class="event-highlight" id="event-section">
+      <h2>Next Game Night</h2>
+      <div id="event-details">
+        <p>Loading event details...</p>
+      </div>
+
+      <div id="poll-results-section" style="margin-top: 30px;">
+        <h3>Poll Results</h3>
+        <div id="poll-results" class="poll-results">Loading poll results...</div>
+      </div>
+    </section>
+
+    <h2 class="section-title">Where?</h2>
+    <div id="map"></div>
+
+    <h2 class="section-title">Past Matches</h2>
+    <div id="match-results" class="poll-results">Loading past matches...</div>
+  </div>
+
+  <script src="scripts/poll.js" defer></script>
+  <script src="scripts/matches.js" defer></script>
+
+  <script>
+    function setupMap() {
+      const map = L.map('map').setView([45.7073, 11.4323], 17);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+      L.marker([45.7073, 11.4323])
+        .addTo(map)
+        .bindPopup("Centro Socio Culturale di Zanè")
+        .openPopup();
+    }
+
+    window.addEventListener('DOMContentLoaded', setupMap);
+  </script>
+</body>
+</html>

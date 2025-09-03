@@ -1,0 +1,17 @@
+{
+  "title": "The Witcher: Old World",
+  "url": "https://boardgamegeek.com/boardgame/331106/the-witcher-old-world",
+  "players": "1-5",
+  "playersWithExpansion": 6,
+  "time": "90–150",
+  "owner": "gasca98",
+  "description": "Adventure game set in the Witcher universe, where players are rival monster-hunters.",
+  "expansions": [
+    {
+      "title": "Monster Trail (6th Player Expansion)",
+      "url": "https://boardgamegeek.com/boardgame/341023/the-witcher-old-world-monster-trail",
+      "note": "+1 player",
+      "description": "Adds components to include a sixth player."
+    }
+  ]
+}

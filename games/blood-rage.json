@@ -1,0 +1,22 @@
+{
+  "title": "Blood Rage",
+  "url": "https://boardgamegeek.com/boardgame/170216/blood-rage",
+  "players": "2-4",
+  "playersWithExpansion": 5,
+  "time": "60–90",
+  "owner": "gasca98",
+  "description": "Battle-driven area control game set in Norse mythology.",
+  "expansions": [
+    {
+      "title": "5th Player Expansion",
+      "url": "https://boardgamegeek.com/boardgameexpansion/174506/blood-rage-5th-player-expansion",
+      "note": "+1 player",
+      "description": "Adds components to include a fifth player."
+    },
+    {
+      "title": "Gods of Ásgard",
+      "url": "https://boardgamegeek.com/boardgameexpansion/174801/blood-rage-gods-of-asgard",
+      "description": "Adds gods to the game, affecting each province with unique effects."
+    }
+  ]
+}
