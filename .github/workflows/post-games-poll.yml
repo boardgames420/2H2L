@@ -26,6 +26,7 @@ jobs:
           NEXT_EVENT_DATE=$(jq -r '.date' events/upcoming.json)  # e.g., 2025-09-06
           TODAY_UTC=$(date -u +%F)
           TARGET_DAY_UTC=$(date -u -d "$NEXT_EVENT_DATE -2 days" +%F)
+          TODAY_LOCAL=$(TZ=Europe/Rome date +%F)
 
           echo "Next event date: $NEXT_EVENT_DATE"
           echo "Today (UTC):    $TODAY_UTC"
