@@ -2,7 +2,7 @@
   "votes": [
     {"slug": "blood-rage", "title": "Blood Rage", "url": "https://boardgamegeek.com/boardgame/170216/blood-rage", "votes": 0}
 ,
-    {"slug": "dune-imperium", "title": "Dune: Imperium", "url": "https://boardgamegeek.com/boardgame/316554/dune-imperium", "votes": 0}
+    {"slug": "dune-imperium", "title": "Dune: Imperium", "url": "https://boardgamegeek.com/boardgame/316554/dune-imperium", "votes": 1}
 ,
     {"slug": "lands-of-evershade", "title": "Lands of Evershade", "url": "https://gamefound.com/en/projects/awaken-realms/lands-of-evershade", "votes": 0}
 ,
@@ -14,7 +14,7 @@
 ,
     {"slug": "senjutsu", "title": "Senjutsu: Battle For Japan", "url": "https://boardgamegeek.com/boardgame/343900/senjutsu-battle-for-japan", "votes": 0}
 ,
-    {"slug": "skull", "title": "Skull", "url": "https://boardgamegeek.com/boardgame/92415/skull", "votes": 0}
+    {"slug": "skull", "title": "Skull", "url": "https://boardgamegeek.com/boardgame/92415/skull", "votes": 1}
 ,
     {"slug": "spqrisiko", "title": "S.P.Q.RisiKo!", "url": "https://boardgamegeek.com/boardgame/21503/spqrisiko", "votes": 0}
 ,
@@ -32,5 +32,5 @@
 ,
     {"slug": "zombicide-green-horde", "title": "Zombicide: Green Horde", "url": "https://boardgamegeek.com/boardgame/224710/zombicide-green-horde", "votes": 0}
   ],
-  "generatedAt": "2025-09-06T08:46:40Z"
+  "generatedAt": "2025-09-06T08:57:34Z"
 }
