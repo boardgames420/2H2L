@@ -2,7 +2,7 @@ name: Announce Game
 
 on:
   schedule:
-    - cron: "*/10 * * * *"  # Every 10 minutes
+    - cron: "*/5 * * * *"  # Check every 5 minutes
   workflow_dispatch:
 
 permissions:
@@ -36,6 +36,50 @@ jobs:
           echo "EVENT_DATE=$EVENT_DATE" >> $GITHUB_ENV
           echo "EVENT_TIME=$EVENT_TIME" >> $GITHUB_ENV
           echo "PLAYERS_LIMIT=$PLAYERS_LIMIT" >> $GITHUB_ENV
+
+      - name: Gate — only at 17:00 Europe/Rome on event day and not already announced
+        id: gate
+        run: |
+          set -euo pipefail
+
+          EVENT_DATE="${EVENT_DATE:-}"
+          if [ -z "$EVENT_DATE" ] || [ "$EVENT_DATE" = "null" ]; then
+            echo "No EVENT_DATE in events/upcoming.json; exiting."
+            echo "should_post=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TODAY_LOCAL=$(TZ=Europe/Rome date +%F)
+          HOUR_LOCAL=$(TZ=Europe/Rome date +%H)
+          echo "Event date:     $EVENT_DATE"
+          echo "Today (local):  $TODAY_LOCAL"
+          echo "Hour  (local):  $HOUR_LOCAL"
+
+          if [ "$TODAY_LOCAL" != "$EVENT_DATE" ]; then
+            echo "Not the event day. Skipping."
+            echo "should_post=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$HOUR_LOCAL" != "17" ]; then
+            echo "Not 17:00 local yet. Skipping."
+            echo "should_post=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          RECORD_FILE=".last_game_announcement"
+          if [ -f "$RECORD_FILE" ] && grep -qx "$EVENT_DATE" "$RECORD_FILE"; then
+            echo "Already announced for $EVENT_DATE. Skipping."
+            echo "should_post=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Time gate passed — we should post."
+          echo "should_post=true" >> "$GITHUB_OUTPUT"
+
+      - name: Exit if not time to post
+        if: steps.gate.outputs.should_post != 'true'
+        run: exit 0
 
       - name: Find latest poll message in channel (not just latest message)
         id: fetch_message
@@ -165,7 +209,6 @@ jobs:
           EVENT_LINE=""
           if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Data ed ora: ${EDATE} ${ETIME}"; fi
 
-          # First try: ONE message with content + embed
           JSON=$(jq -n \
             --arg content "✅ Winner fits the table!" \
             --arg gtitle "$TITLE" --arg gurl "$URL" \
@@ -174,9 +217,7 @@ jobs:
             --arg eventline "$EVENT_LINE" \
             '{content:$content, embeds:[{title:$gtitle, url:$gurl,
               description: ((if $eventline != "" then ($eventline + "\n") else "" end)
-                            + "Players: " + $min + "-" + $max
-                            + "\nVotes: " + $votes
-                            + "\nConfirmed players (unique voters): " + $players),
+                            + "Numero di giocatori: " + $votes,
               color:5814783}] }')
 
           RESP_BODY=$(mktemp)
@@ -186,29 +227,41 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$JSON" || true)
 
+          POST_OK=0
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             NEW_ID=$(jq -r '.id // empty' "$RESP_BODY")
             EMBED_LEN=$(jq '.embeds | length // 0' "$RESP_BODY")
             if [ "$EMBED_LEN" -ge 1 ]; then
-              # Success with embed → done (single message)
-              exit 0
-            fi
-            # Content-only (embed stripped): delete and fallback
-            if [ -n "$NEW_ID" ]; then
-              curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
-                -H "Authorization: Bot $TOKEN" >/dev/null
+              POST_OK=1
+            else
+              # delete stripped message and fallback
+              if [ -n "$NEW_ID" ]; then
+                curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
+                  -H "Authorization: Bot $TOKEN" >/dev/null
+              fi
             fi
           fi
 
-          # Fallback: one plain message
-          MSG="**${TITLE}**\n"
-          if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}${EVENT_LINE}\n"; fi
-          MSG="${MSG}Numero di giocatori: ${VOTES}"
-          echo -e "$MSG" > announce_winner_fallback.txt
-          MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
-          curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
-            -H "Authorization: Bot $TOKEN" -H "Content-Type: application/json" \
-            -d "{\"content\": $MSG_CONTENT}" >/dev/null
+          if [ "$POST_OK" -ne 1 ]; then
+            # Fallback: one plain message
+            MSG="**${TITLE}**\n"
+            if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}${EVENT_LINE}\n"; fi
+            MSG="${MSG}Numero di giocatori:${VOTES}"
+            echo -e "$MSG" > announce_winner_fallback.txt
+            MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
+            curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+              -H "Authorization: Bot $TOKEN" -H "Content-Type: application/json" \
+              -d "{\"content\": $MSG_CONTENT}" >/dev/null
+            POST_OK=1
+          fi
+
+          # Mark announced so we don't post again today
+          echo "$EVENT_DATE" > .last_game_announcement
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .last_game_announcement
+          git commit -m "Record game announcement for ${EVENT_DATE}" || echo "No changes"
+          git push || echo "Nothing to push"
 
       - name: Post announcement to Discord (no suitable; single-message logic)
         if: env.NO_SUITABLE == 'true'
@@ -223,9 +276,12 @@ jobs:
           set -euo pipefail
 
           EVENT_LINE=""
-          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Data ed ora: ${EDATE} ${ETIME}"; fi
+          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Event: ${EDATE} ${ETIME}"; fi
+          if [ -n "${PLIMIT}" ]; then
+            if [ -n "$EVENT_LINE" ]; then EVENT_LINE="${EVENT_LINE}  •  Players cap: ${PLIMIT}";
+            else EVENT_LINE="Players cap: ${PLIMIT}"; fi
+          fi
 
-          # First try: content + embed
           JSON=$(jq -n \
             --arg content "⚠️ No polled game currently fits the confirmed players" \
             --arg n "$NPLAYERS" --arg eventline "$EVENT_LINE" \
@@ -242,22 +298,36 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$JSON" || true)
 
+          POST_OK=0
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             NEW_ID=$(jq -r '.id // empty' "$RESP_BODY")
             EMBED_LEN=$(jq '.embeds | length // 0' "$RESP_BODY")
-            if [ "$EMBED_LEN" -ge 1 ]; then exit 0; fi
-            if [ -n "$NEW_ID" ]; then
-              curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
-                -H "Authorization: Bot $TOKEN" >/dev/null
+            if [ "$EMBED_LEN" -ge 1 ]; then
+              POST_OK=1
+            else
+              if [ -n "$NEW_ID" ]; then
+                curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
+                  -H "Authorization: Bot $TOKEN" >/dev/null
+              fi
             fi
           fi
 
-          # Fallback: one plain message
-          MSG="⚠️ No polled game currently fits the confirmed players.\n"
-          if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}\n${EVENT_LINE}"; fi
-          MSG="${MSG}\nConfirmed players (unique voters): ${NPLAYERS}\nConsider adjusting players or proposing an alternative.\n"
-          echo -e "$MSG" > announce_none_fallback.txt
-          MSG_CONTENT=$(jq -Rs . < announce_none_fallback.txt | sed 's/\\\\n/\\n/g')
-          curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
-            -H "Authorization: Bot $TOKEN" -H "Content-Type: application/json" \
-            -d "{\"content\": $MSG_CONTENT}" >/dev/null
+          if [ "$POST_OK" -ne 1 ]; then
+            MSG="⚠️ No polled game currently fits the confirmed players.\n"
+            if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}\n${EVENT_LINE}"; fi
+            MSG="${MSG}\nConfirmed players (unique voters): ${NPLAYERS}\nConsider adjusting players or proposing an alternative.\n"
+            echo -e "$MSG" > announce_none_fallback.txt
+            MSG_CONTENT=$(jq -Rs . < announce_none_fallback.txt | sed 's/\\\\n/\\n/g')
+            curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+              -H "Authorization: Bot $TOKEN" -H "Content-Type: application/json" \
+              -d "{\"content\": $MSG_CONTENT}" >/dev/null
+            POST_OK=1
+          fi
+
+          # Mark announced so we don't post again today
+          echo "$EVENT_DATE" > .last_game_announcement
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .last_game_announcement
+          git commit -m "Record game announcement for ${EVENT_DATE}" || echo "No changes"
+          git push || echo "Nothing to push"
