@@ -1,8 +1,8 @@
-name: Assess and Announce Game
+name: Announce Game
 
 on:
   schedule:
-    - cron: "*/10 * * * *"  # Every 10 minutes
+    - cron: "*/5 * * * *"  # Every 5 minutes
   workflow_dispatch:
 
 permissions:
@@ -62,16 +62,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          # The poll message was constructed with A..Z regional indicator emojis.
+          # Regional indicator emojis A..Z used in the poll
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
 
-          # Detect exactly which emojis are present in the posted poll message.
+          # Detect which emojis are present in the actual posted message
           CONTENT=$(jq -r '.content' .poll_message.json | tr -d '\r')
           printf "%s\n" "$CONTENT" > .poll_message_content.txt
 
           : > .used_emojis.txt
           for E in "${EMOJIS[@]}"; do
-            # Matches lines like: "🇦 Game Title"
+            # lines like: "🇦 Game Title"
             if grep -q "^$E " .poll_message_content.txt; then
               echo "$E" >> .used_emojis.txt
             fi
@@ -85,7 +85,7 @@ jobs:
 
           : > .all_voters.txt
 
-          # Fetch reactors for each actually used emoji from the message (ignore bot users)
+          # Fetch reactors for each used emoji; ignore bot users; union IDs
           while read -r EMOJI; do
             [ -z "$EMOJI" ] && continue
             ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
@@ -106,24 +106,21 @@ jobs:
           echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
           echo "Unique voters detected: ${UNIQUE_VOTERS}"
 
-          # If nobody voted, stop here quietly
+          # If nobody voted, stop quietly
           if [ "$UNIQUE_VOTERS" -eq 0 ]; then
             echo "No voters yet; exiting."
             exit 0
           fi
 
-      - name: Choose a playable winner and announce
+      - name: Choose a playable winner and set env
         if: steps.fetch_message.outputs.has_message == 'true'
-        env:
-          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
         run: |
           set -euo pipefail
 
           # Helper: get min/max players from a game JSON file.
           # Supports:
           # - minPlayers/maxPlayers or players_min/players_max
-          # - players: "1-4", "1–4", "1 to 4" (parsed)
+          # - players: "1-4", "1–4", "1 to 4"
           get_minmax() {
             local file="$1"
             local MIN MAX
@@ -146,7 +143,7 @@ jobs:
           UNIQUE_VOTERS="${UNIQUE_VOTERS:-0}"
           echo "Evaluating with UNIQUE_VOTERS=${UNIQUE_VOTERS}"
 
-          # Sort by votes desc and scan for the first that fits UNIQUE_VOTERS
+          # Sort by votes desc; scan for first that fits UNIQUE_VOTERS
           jq -c '.votes | sort_by(-.votes)' results/games_results.json > .votes_sorted.json
 
           CHOSEN_SLUG=""
@@ -169,8 +166,6 @@ jobs:
             fi
 
             read MIN MAX < <(get_minmax "$GAME_FILE")
-
-            # Require both MIN and MAX; skip if missing
             if [ -z "$MIN" ] || [ -z "$MAX" ]; then
               continue
             fi
@@ -213,13 +208,15 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
-          MSG="✅ **Winner fits the table!**\n\nGame: **${TITLE}** (${URL})\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}"
-          JSON=$(jq -Rn --arg c "$MSG" '{content:$c}')
+
+          MSG="✅ **Winner fits the table!**\n\n**${TITLE}** (${URL})\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
+          echo -e "$MSG" > announce_winner.txt
+          MSG_CONTENT=$(jq -Rs . < announce_winner.txt | sed 's/\\\\n/\\n/g')
 
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "$JSON" >/dev/null
+            -d "{\"content\": $MSG_CONTENT}" >/dev/null
 
       - name: Post announcement to Discord (no suitable game)
         if: env.NO_SUITABLE == 'true'
@@ -229,10 +226,12 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
-          MSG="⚠️ No polled game currently fits **${NPLAYERS}** confirmed players. Consider adjusting players or proposing an alternative."
-          JSON=$(jq -Rn --arg c "$MSG" '{content:$c}')
+
+          MSG="⚠️ No polled game currently fits the confirmed players.\n\nConfirmed players (unique voters): ${NPLAYERS}\nConsider adjusting players or proposing an alternative.\n"
+          echo -e "$MSG" > announce_none.txt
+          MSG_CONTENT=$(jq -Rs . < announce_none.txt | sed 's/\\\\n/\\n/g')
 
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "$JSON" >/dev/null
+            -d "{\"content\": $MSG_CONTENT}" >/dev/null
