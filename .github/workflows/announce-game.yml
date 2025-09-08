@@ -217,7 +217,7 @@ jobs:
             --arg eventline "$EVENT_LINE" \
             '{content:$content, embeds:[{title:$gtitle, url:$gurl,
               description: ((if $eventline != "" then ($eventline + "\n") else "" end)
-                            + "Numero di giocatori: " + $votes,
+                            + "Numero di giocatori: " + $votes),
               color:5814783}] }')
 
           RESP_BODY=$(mktemp)
