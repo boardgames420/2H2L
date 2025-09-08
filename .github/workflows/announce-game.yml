@@ -183,7 +183,7 @@ jobs:
             echo "NO_SUITABLE=true" >> $GITHUB_ENV
           fi
 
-      - name: Post announcement to Discord (winner via embed with clickable title)
+      - name: Post announcement to Discord (winner via embed with clickable title; fallback if embeds blocked)
         if: env.NO_SUITABLE == 'false' && env.CHOSEN_SLUG != ''
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -196,6 +196,8 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
+
+          # 1) Try EMBED (title is the hyperlink)
           JSON=$(jq -n \
             --arg gtitle "$TITLE" \
             --arg gurl "$URL" \
@@ -217,10 +219,26 @@ jobs:
               ]
             }')
 
-          curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+          RESP=$(curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "$JSON" >/dev/null
+            -d "$JSON")
+
+          # If embeds are stripped or not allowed, Discord returns the message without embeds.
+          EMBED_LEN=$(printf "%s" "$RESP" | jq '.embeds | length // 0' 2>/dev/null || echo 0)
+
+          if [ "$EMBED_LEN" -eq 0 ]; then
+            # 2) Fallback: plain content with clickable URL (<...>)
+            MSG="✅ **Winner fits the table!**\n\n**${TITLE}** <${URL}>\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
+            echo -e "$MSG" > announce_winner_fallback.txt
+            MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
+
+            curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+              -H "Authorization: Bot $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\": $MSG_CONTENT}" >/dev/null
+          fi
+
 
       - name: Post announcement to Discord (no suitable game - embed)
         if: env.NO_SUITABLE == 'true'
