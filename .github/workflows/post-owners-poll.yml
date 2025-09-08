@@ -1,15 +1,15 @@
-name: Announce Game
+name: Post Owners Poll
 
 on:
   schedule:
-    - cron: "*/5 * * * *"  # Check every 5 minutes
+    - cron: "0 8 * * *"  # 09:00 CET (08:00 UTC)
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  assess_and_announce:
+  post_poll:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,315 +19,110 @@ jobs:
       - name: Install jq and curl
         run: sudo apt-get update && sudo apt-get install -y jq curl
 
-      - name: Ensure results file exists
-        run: |
-          if [ ! -f results/games_results.json ]; then
-            echo "results/games_results.json not found. Exiting."
-            exit 0
-          fi
-
-      - name: Load event info (date/time/playersLimit)
-        id: load_event
+      - name: Check if today is 3 days before the next event (UTC)
+        id: check_event_day
         run: |
           set -euo pipefail
-          EVENT_DATE=$(jq -r '.date // empty' events/upcoming.json 2>/dev/null || true)
-          EVENT_TIME=$(jq -r '.time // empty' events/upcoming.json 2>/dev/null || true)
-          PLAYERS_LIMIT=$(jq -r '.playersLimit // empty' events/upcoming.json 2>/dev/null || true)
-          echo "EVENT_DATE=$EVENT_DATE" >> $GITHUB_ENV
-          echo "EVENT_TIME=$EVENT_TIME" >> $GITHUB_ENV
-          echo "PLAYERS_LIMIT=$PLAYERS_LIMIT" >> $GITHUB_ENV
-
-      - name: Gate — only at 17:00 Europe/Rome on event day and not already announced
-        id: gate
-        run: |
-          set -euo pipefail
-
-          EVENT_DATE="${EVENT_DATE:-}"
-          if [ -z "$EVENT_DATE" ] || [ "$EVENT_DATE" = "null" ]; then
-            echo "No EVENT_DATE in events/upcoming.json; exiting."
-            echo "should_post=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
+          NEXT_EVENT_DATE=$(jq -r '.date' events/upcoming.json)  # e.g., 2025-09-06
+          TODAY_UTC=$(date -u +%F)
+          TARGET_DAY_UTC=$(date -u -d "$NEXT_EVENT_DATE -3 days" +%F)
           TODAY_LOCAL=$(TZ=Europe/Rome date +%F)
-          HOUR_LOCAL=$(TZ=Europe/Rome date +%H)
-          echo "Event date:     $EVENT_DATE"
-          echo "Today (local):  $TODAY_LOCAL"
-          echo "Hour  (local):  $HOUR_LOCAL"
 
-          if [ "$TODAY_LOCAL" != "$EVENT_DATE" ]; then
-            echo "Not the event day. Skipping."
+          echo "Next event date: $NEXT_EVENT_DATE"
+          echo "Today (UTC):    $TODAY_UTC"
+          echo "Target (UTC):   $TARGET_DAY_UTC"
+
+          if [ "$TODAY_UTC" = "$TARGET_DAY_UTC" ]; then
+            echo "should_post=true" >> "$GITHUB_OUTPUT"
+          else
             echo "should_post=false" >> "$GITHUB_OUTPUT"
-            exit 0
           fi
-
-          if [ "$HOUR_LOCAL" != "17" ]; then
-            echo "Not 17:00 local yet. Skipping."
-            echo "should_post=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          RECORD_FILE=".last_game_announcement"
-          if [ -f "$RECORD_FILE" ] && grep -qx "$EVENT_DATE" "$RECORD_FILE"; then
-            echo "Already announced for $EVENT_DATE. Skipping."
-            echo "should_post=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "Time gate passed — we should post."
-          echo "should_post=true" >> "$GITHUB_OUTPUT"
 
       - name: Exit if not time to post
-        if: steps.gate.outputs.should_post != 'true'
+        if: steps.check_event_day.outputs.should_post != 'true'
         run: exit 0
 
-      - name: Find latest poll message in channel (not just latest message)
-        id: fetch_message
+      - name: Delete previous messages from channel
+        if: steps.check_event_day.outputs.should_post == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          CHANNEL_ID: ${{ secrets.DISCORD_OWNERS_CHANNEL_ID }}
         run: |
           set -euo pipefail
-          RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
-            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=50")
-          POLL=$(echo "$RESPONSE" | jq -c '[.[] | select((.content // "") | contains("React with the emoji to vote:"))] | first')
-          if [ "$POLL" = "null" ] || [ -z "$POLL" ]; then
-            POLL=$(echo "$RESPONSE" | jq -c '[.[] | select((.content // "") | contains("Vote for the week"))] | first')
-          fi
-          if [ "$POLL" = "null" ] || [ -z "$POLL" ]; then
-            echo "Could not find a recent poll message. Exiting."
-            echo "has_message=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "$POLL" | jq '.' > .poll_message.json
-          MESSAGE_ID=$(jq -r '.id' .poll_message.json)
-          if [ -z "$MESSAGE_ID" ] || [ "$MESSAGE_ID" = "null" ]; then
-            echo "No valid poll message ID found; exiting."
-            echo "has_message=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
-          echo "has_message=true" >> "$GITHUB_OUTPUT"
+          MESSAGES=$(curl -s -H "Authorization: Bot $TOKEN" \
+            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=100")
 
-      - name: Count unique voters from reactions (regional A–Z only)
-        if: steps.fetch_message.outputs.has_message == 'true'
+          echo "$MESSAGES" | jq -r '.[].id' | while read -r ID; do
+            [ -z "$ID" ] && continue
+            curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$ID" \
+              -H "Authorization: Bot $TOKEN" >/dev/null
+            sleep 0.5
+          done
+
+      - name: Build and post availability poll
+        if: steps.check_event_day.outputs.should_post == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          CHANNEL_ID: ${{ secrets.DISCORD_OWNERS_CHANNEL_ID }}
         run: |
           set -euo pipefail
+          mkdir -p .tmp
+          jq -r '.[]' games/owners.json > .tmp/owners_list.txt
+
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
-          : > .allowed_emojis.txt
-          for E in "${EMOJIS[@]}"; do echo "$E" >> .allowed_emojis.txt; done
-          jq -r '.reactions[]?.emoji.name' .poll_message.json > .reacted_emojis_raw.txt || true
-          : > .used_emojis.txt
-          while read -r EM; do
-            [ -z "$EM" ] && continue
-            if grep -Fxq "$EM" .allowed_emojis.txt; then echo "$EM" >> .used_emojis.txt; fi
-          done < .reacted_emojis_raw.txt
-          if [ ! -s .used_emojis.txt ]; then
-            echo "UNIQUE_VOTERS=0" >> $GITHUB_ENV
-            echo "No A–Z reactions found; exiting."
+          i=0
+
+          echo -e "🧩 **Game Owners – Will you be there next time?**\n\nReact with your emoji to confirm:\n" > owner_poll_message.txt
+
+          while read -r OWNER; do
+            [ -z "$OWNER" ] && continue
+            EMOJI="${EMOJIS[i]}"
+            echo -e "${EMOJI} ${OWNER}\n" >> owner_poll_message.txt
+            i=$((i + 1))
+          done < .tmp/owners_list.txt
+
+          # If no owners, do NOT send anything
+          if [ $i -eq 0 ]; then
+            echo "No owners found. Exiting without sending."
             exit 0
           fi
-          sort -u .used_emojis.txt > .used_emojis_uniq.txt
-          : > .all_voters.txt
-          while read -r EMOJI; do
-            [ -z "$EMOJI" ] && continue
+
+          MSG_CONTENT=$(jq -Rs . < owner_poll_message.txt | sed 's/\\\\n/\\n/g')
+
+          RESPONSE=$(curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+            -H "Authorization: Bot $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"content\": $MSG_CONTENT}")
+
+          echo "$RESPONSE" > .owner_poll_response.json
+          MESSAGE_ID=$(jq -r '.id' .owner_poll_response.json)
+
+          if [ "$MESSAGE_ID" = "null" ] || [ -z "$MESSAGE_ID" ]; then
+            echo "Failed to post owners poll; not recording poll date."
+            cat .owner_poll_response.json
+            exit 1
+          fi
+
+          i=0
+          while read -r OWNER; do
+            [ -z "$OWNER" ] && continue
+            EMOJI="${EMOJIS[i]}"
             ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
-            USERS_RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
-              "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED?limit=100")
-            echo "$USERS_RESPONSE" | jq -r '.[] | select(.bot != true) | .id' >> .all_voters.txt || true
-          done < .used_emojis_uniq.txt
-          if [ -s .all_voters.txt ]; then
-            sort -u .all_voters.txt > .all_voters_uniq.txt
-            UNIQUE_VOTERS=$(wc -l < .all_voters_uniq.txt | tr -d '[:space:]')
-          else
-            UNIQUE_VOTERS=0
-          fi
-          echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
-          if [ "$UNIQUE_VOTERS" -eq 0 ]; then exit 0; fi
+            curl -s -X PUT "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/${MESSAGE_ID}/reactions/${ENCODED}/@me" \
+              -H "Authorization: Bot $TOKEN" >/dev/null
+            sleep 0.2
+            i=$((i + 1))
+          done < .tmp/owners_list.txt
 
-      - name: Choose a playable winner and set env
-        if: steps.fetch_message.outputs.has_message == 'true'
+      - name: Commit poll record
+        if: steps.check_event_day.outputs.should_post == 'true'
         run: |
           set -euo pipefail
-          get_minmax() {
-            local file="$1"; local MIN MAX
-            MIN=$(jq -r '(.minPlayers // .players_min // empty)' "$file")
-            MAX=$(jq -r '(.maxPlayers // .players_max // empty)' "$file")
-            if [ -z "$MIN" ] || [ "$MIN" = "null" ] || [ -z "$MAX" ] || [ "$MAX" = "null" ]; then
-              local PSTR; PSTR=$(jq -r '(.players // empty)' "$file")
-              if [ -n "$PSTR" ] && [ "$PSTR" != "null" ]; then
-                MIN=$(printf "%s" "$PSTR" | grep -Eo '[0-9]+' | sed -n '1p')
-                MAX=$(printf "%s" "$PSTR" | grep -Eo '[0-9]+' | sed -n '2p')
-              fi
-            fi
-            echo "${MIN:-}" "${MAX:-}"
-          }
-          UNIQUE_VOTERS="${UNIQUE_VOTERS:-0}"
-          jq -c '.votes | sort_by(-.votes)' results/games_results.json > .votes_sorted.json
-          CHOSEN_SLUG=""; CHOSEN_TITLE=""; CHOSEN_URL=""; CHOSEN_MIN=""; CHOSEN_MAX=""; CHOSEN_VOTES=""; FOUND=0
-          while read -r ROW; do
-            SLUG=$(echo "$ROW" | jq -r '.slug'); TITLE=$(echo "$ROW" | jq -r '.title')
-            URL=$(echo "$ROW" | jq -r '.url'); VOTES=$(echo "$ROW" | jq -r '.votes')
-            GAME_FILE="games/${SLUG}.json"; [ -f "$GAME_FILE" ] || continue
-            read MIN MAX < <(get_minmax "$GAME_FILE"); [ -n "$MIN" ] && [ -n "$MAX" ] || continue
-            if [ "$UNIQUE_VOTERS" -ge "$MIN" ] && [ "$UNIQUE_VOTERS" -le "$MAX" ]; then
-              CHOSEN_SLUG="$SLUG"; CHOSEN_TITLE="$TITLE"; CHOSEN_URL="$URL"; CHOSEN_MIN="$MIN"; CHOSEN_MAX="$MAX"; CHOSEN_VOTES="$VOTES"; FOUND=1; break
-            fi
-          done < <(jq -c '.[]' .votes_sorted.json)
-          if [ "$FOUND" -eq 1 ]; then
-            echo "CHOSEN_SLUG=$CHOSEN_SLUG" >> $GITHUB_ENV
-            echo "CHOSEN_TITLE=$CHOSEN_TITLE" >> $GITHUB_ENV
-            echo "CHOSEN_URL=$CHOSEN_URL" >> $GITHUB_ENV
-            echo "CHOSEN_MIN=$CHOSEN_MIN" >> $GITHUB_ENV
-            echo "CHOSEN_MAX=$CHOSEN_MAX" >> $GITHUB_ENV
-            echo "CHOSEN_VOTES=$CHOSEN_VOTES" >> $GITHUB_ENV
-            echo "NO_SUITABLE=false" >> $GITHUB_ENV
-          else
-            echo "NO_SUITABLE=true" >> $GITHUB_ENV
-          fi
+          NEXT_EVENT_DATE=$(jq -r '.date' events/upcoming.json)
+          echo "$NEXT_EVENT_DATE" > .last_owners_poll
 
-      - name: Post announcement to Discord (winner; single-message logic)
-        if: env.NO_SUITABLE == 'false' && env.CHOSEN_SLUG != ''
-        env:
-          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
-          TITLE: ${{ env.CHOSEN_TITLE }}
-          URL: ${{ env.CHOSEN_URL }}
-          MINP: ${{ env.CHOSEN_MIN }}
-          MAXP: ${{ env.CHOSEN_MAX }}
-          VOTES: ${{ env.CHOSEN_VOTES }}
-          NPLAYERS: ${{ env.UNIQUE_VOTERS }}
-          EDATE: ${{ env.EVENT_DATE }}
-          ETIME: ${{ env.EVENT_TIME }}
-          PLIMIT: ${{ env.PLAYERS_LIMIT }}
-        run: |
-          set -euo pipefail
-
-          EVENT_LINE=""
-          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Data ed ora: ${EDATE} ${ETIME}"; fi
-
-          JSON=$(jq -n \
-            --arg content "✅ Winner fits the table!" \
-            --arg gtitle "$TITLE" --arg gurl "$URL" \
-            --arg min "$MINP" --arg max "$MAXP" \
-            --arg votes "$VOTES" --arg players "$NPLAYERS" \
-            --arg eventline "$EVENT_LINE" \
-            '{content:$content, embeds:[{title:$gtitle, url:$gurl,
-              description: ((if $eventline != "" then ($eventline + "\n") else "" end)
-                            + "Numero di giocatori: " + $votes,
-              color:5814783}] }')
-
-          RESP_BODY=$(mktemp)
-          HTTP_CODE=$(curl -sS -o "$RESP_BODY" -w "%{http_code}" -X POST \
-            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
-            -H "Authorization: Bot $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "$JSON" || true)
-
-          POST_OK=0
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            NEW_ID=$(jq -r '.id // empty' "$RESP_BODY")
-            EMBED_LEN=$(jq '.embeds | length // 0' "$RESP_BODY")
-            if [ "$EMBED_LEN" -ge 1 ]; then
-              POST_OK=1
-            else
-              # delete stripped message and fallback
-              if [ -n "$NEW_ID" ]; then
-                curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
-                  -H "Authorization: Bot $TOKEN" >/dev/null
-              fi
-            fi
-          fi
-
-          if [ "$POST_OK" -ne 1 ]; then
-            # Fallback: one plain message
-            MSG="**${TITLE}**\n"
-            if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}${EVENT_LINE}\n"; fi
-            MSG="${MSG}Numero di giocatori:${VOTES}"
-            echo -e "$MSG" > announce_winner_fallback.txt
-            MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
-            curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
-              -H "Authorization: Bot $TOKEN" -H "Content-Type: application/json" \
-              -d "{\"content\": $MSG_CONTENT}" >/dev/null
-            POST_OK=1
-          fi
-
-          # Mark announced so we don't post again today
-          echo "$EVENT_DATE" > .last_game_announcement
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .last_game_announcement
-          git commit -m "Record game announcement for ${EVENT_DATE}" || echo "No changes"
-          git push || echo "Nothing to push"
-
-      - name: Post announcement to Discord (no suitable; single-message logic)
-        if: env.NO_SUITABLE == 'true'
-        env:
-          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
-          NPLAYERS: ${{ env.UNIQUE_VOTERS }}
-          EDATE: ${{ env.EVENT_DATE }}
-          ETIME: ${{ env.EVENT_TIME }}
-          PLIMIT: ${{ env.PLAYERS_LIMIT }}
-        run: |
-          set -euo pipefail
-
-          EVENT_LINE=""
-          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Event: ${EDATE} ${ETIME}"; fi
-          if [ -n "${PLIMIT}" ]; then
-            if [ -n "$EVENT_LINE" ]; then EVENT_LINE="${EVENT_LINE}  •  Players cap: ${PLIMIT}";
-            else EVENT_LINE="Players cap: ${PLIMIT}"; fi
-          fi
-
-          JSON=$(jq -n \
-            --arg content "⚠️ No polled game currently fits the confirmed players" \
-            --arg n "$NPLAYERS" --arg eventline "$EVENT_LINE" \
-            '{content:$content, embeds:[{description:
-              ((if $eventline != "" then ($eventline + "\n") else "" end)
-              + "Confirmed players (unique voters): " + $n
-              + "\nConsider adjusting players or proposing an alternative."),
-              color:15158332}] }')
-
-          RESP_BODY=$(mktemp)
-          HTTP_CODE=$(curl -sS -o "$RESP_BODY" -w "%{http_code}" -X POST \
-            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
-            -H "Authorization: Bot $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "$JSON" || true)
-
-          POST_OK=0
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            NEW_ID=$(jq -r '.id // empty' "$RESP_BODY")
-            EMBED_LEN=$(jq '.embeds | length // 0' "$RESP_BODY")
-            if [ "$EMBED_LEN" -ge 1 ]; then
-              POST_OK=1
-            else
-              if [ -n "$NEW_ID" ]; then
-                curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
-                  -H "Authorization: Bot $TOKEN" >/dev/null
-              fi
-            fi
-          fi
-
-          if [ "$POST_OK" -ne 1 ]; then
-            MSG="⚠️ No polled game currently fits the confirmed players.\n"
-            if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}\n${EVENT_LINE}"; fi
-            MSG="${MSG}\nConfirmed players (unique voters): ${NPLAYERS}\nConsider adjusting players or proposing an alternative.\n"
-            echo -e "$MSG" > announce_none_fallback.txt
-            MSG_CONTENT=$(jq -Rs . < announce_none_fallback.txt | sed 's/\\\\n/\\n/g')
-            curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
-              -H "Authorization: Bot $TOKEN" -H "Content-Type: application/json" \
-              -d "{\"content\": $MSG_CONTENT}" >/dev/null
-            POST_OK=1
-          fi
-
-          # Mark announced so we don't post again today
-          echo "$EVENT_DATE" > .last_game_announcement
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .last_game_announcement
-          git commit -m "Record game announcement for ${EVENT_DATE}" || echo "No changes"
-          git push || echo "Nothing to push"
+          git add .last_owners_poll
+          git commit -m "📌 Record last owners poll date" || echo "No changes"
+          git push
