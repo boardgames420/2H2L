@@ -289,7 +289,7 @@ jobs:
           # Build the exact message format you requested
           MSG="**${TITLE}**\n"
           MSG="${MSG}Data e ora: ${EDATE} ${ETIME}\n"
-          MSG="${MSG}Numero di Giocatori: ${NPLAYERS}/${MINP}-${MAXP}\n"
+          MSG="${MSG}Numero di Giocatori: ${NPLAYERS}\n"
 
           # JSON-escape and send as a single content message
           echo -e "$MSG" > announce_winner.txt
