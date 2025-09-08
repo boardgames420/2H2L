@@ -219,7 +219,7 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
-          MSG="✅ **Winner fits the table!**\n\n**[${TITLE}**](${URL})\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
+          MSG="✅ **Winner fits the table!**\n\n**${TITLE}** <${URL}>\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
           echo -e "$MSG" > announce_winner.txt
           MSG_CONTENT=$(jq -Rs . < announce_winner.txt | sed 's/\\\\n/\\n/g')
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
