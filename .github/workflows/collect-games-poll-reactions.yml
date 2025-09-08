@@ -45,7 +45,7 @@ jobs:
           echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
           echo "$RESPONSE" | jq '.[0]' > .poll_message.json
 
-            - name: Generate results (robust)
+      - name: Generate results (robust)
         run: |
           set -euo pipefail
           export LC_ALL=C.UTF-8
