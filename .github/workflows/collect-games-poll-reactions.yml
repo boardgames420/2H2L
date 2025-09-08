@@ -25,43 +25,81 @@ jobs:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
         run: |
+          set -euo pipefail
           RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
             "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=1")
 
-          MESSAGE_ID=$(echo "$RESPONSE" | jq -r '.[0].id')
-          echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
+          # If there are no messages, bail gracefully
+          COUNT=$(echo "$RESPONSE" | jq 'length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No messages in channel; exiting."
+            exit 0
+          fi
 
+          MESSAGE_ID=$(echo "$RESPONSE" | jq -r '.[0].id')
+          if [ -z "$MESSAGE_ID" ] || [ "$MESSAGE_ID" = "null" ]; then
+            echo "No latest message ID found; exiting."
+            exit 0
+          fi
+
+          echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
           echo "$RESPONSE" | jq '.[0]' > .poll_message.json
 
       - name: Generate results
         run: |
+          set -euo pipefail
           mkdir -p results/games
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
 
+          # Build a flat list "emoji count" from the poll message; tolerate no reactions
           jq -r '.reactions[]? | "\(.emoji.name) \(.count)"' .poll_message.json > .reaction_counts.txt || true
 
           NOW=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           TODAY=$(date -u +'%Y-%m-%d')
 
-          # Filter games based on present owners
-          jq -n \
-            --slurpfile games games/index.json \
-            --slurpfile owners results/owners_results.json \
-            '$games[0] | map(select(.owner as $o | $owners[0].present | index($o)))' > .filtered_games.json
+          # Filter games based on present owners AND not coming soon (this was your ask)
+          # Expecting results/owners_results.json to contain: { "present": ["owner1", ...] }
+          if [ -f results/owners_results.json ]; then
+            jq -n \
+              --slurpfile games games/index.json \
+              --slurpfile owners results/owners_results.json \
+              '$games[0]
+               | map(select(.owner as $o | $owners[0].present | index($o))
+                     | select(.comingSoon != true))' > .filtered_games.json
+          else
+            # If owners file missing, still exclude comingSoon games
+            jq '[ .[] | select(.comingSoon != true) ]' games/index.json > .filtered_games.json
+          fi
 
+          # If nothing to count, exit without writing noisy files
+          if [ "$(jq 'length' .filtered_games.json)" -eq 0 ]; then
+            echo "No eligible games after filtering; exiting."
+            exit 0
+          fi
+
+          # Assemble results in stable order matching the posting workflow (same filter & order)
           echo "{" > results/games_results.json
           echo "  \"votes\": [" >> results/games_results.json
 
           i=0
+          first=1
           jq -r '.[].slug' .filtered_games.json | while read -r SLUG; do
+            [ -z "$SLUG" ] && continue
             GAME_JSON="games/${SLUG}.json"
             TITLE=$(jq -r '.title' "$GAME_JSON")
             URL=$(jq -r '.url' "$GAME_JSON")
             EMOJI="${EMOJIS[i]}"
-            RAW=$(grep "$EMOJI" .reaction_counts.txt | awk '{print $2}')
+
+            RAW=$(grep -F "$EMOJI " .reaction_counts.txt | awk '{print $2}')
             VOTES=${RAW:-0}
+            # Subtract the bot's own reaction if any (same as your original logic)
             if [ "$VOTES" -gt 0 ]; then VOTES=$((VOTES - 1)); fi
-            [ $i -gt 0 ] && echo "," >> results/games_results.json
+
+            if [ $first -eq 0 ]; then
+              echo "," >> results/games_results.json
+            fi
+            first=0
+
             echo "    {\"slug\": \"$SLUG\", \"title\": \"$TITLE\", \"url\": \"$URL\", \"votes\": $VOTES}" >> results/games_results.json
             i=$((i + 1))
           done
@@ -74,6 +112,7 @@ jobs:
 
       - name: Commit results
         run: |
+          set -euo pipefail
           git config --global user.name "poll-bot"
           git config --global user.email "bot@example.com"
           git add results/games_results.json results/games/*.json
