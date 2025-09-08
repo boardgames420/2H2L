@@ -198,7 +198,7 @@ jobs:
             echo "NO_SUITABLE=true" >> $GITHUB_ENV
           fi
 
-      - name: Post announcement to Discord (winner via embed with clickable title; fallback if embeds blocked)
+      - name: Post announcement to Discord (winner via embed with clickable title; delete+fallback if embeds blocked)
         if: env.NO_SUITABLE == 'false' && env.CHOSEN_SLUG != ''
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -227,7 +227,7 @@ jobs:
             fi
           fi
 
-          # Use proper jq conditional (if/then/else/end)
+          # Try EMBED-ONLY (no content). If embeds get stripped, delete and fallback.
           JSON=$(jq -n \
             --arg gtitle "$TITLE" \
             --arg gurl "$URL" \
@@ -237,7 +237,6 @@ jobs:
             --arg players "$NPLAYERS" \
             --arg eventline "$EVENT_LINE" \
             '{
-              content: "✅ Winner fits the table!",
               embeds: [
                 {
                   title: $gtitle,
@@ -257,9 +256,14 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$JSON")
 
+          NEW_ID=$(printf "%s" "$RESP" | jq -r '.id // empty')
           EMBED_LEN=$(printf "%s" "$RESP" | jq '.embeds | length // 0' 2>/dev/null || echo 0)
 
-          if [ "$EMBED_LEN" -eq 0 ]; then
+          if [ "$EMBED_LEN" -eq 0 ] && [ -n "$NEW_ID" ]; then
+            # Delete the empty/stripped message, then post a single fallback message
+            curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
+              -H "Authorization: Bot $TOKEN" >/dev/null
+
             MSG="✅ **Winner fits the table!**\n\n**${TITLE}** <${URL}>\n"
             if [ -n "${EVENT_LINE}" ]; then
               MSG="${MSG}${EVENT_LINE}\n"
@@ -275,7 +279,7 @@ jobs:
               -d "{\"content\": $MSG_CONTENT}" >/dev/null
           fi
 
-      - name: Post announcement to Discord (no suitable game - embed)
+      - name: Post announcement to Discord (no suitable game - embed; delete+fallback if embeds blocked)
         if: env.NO_SUITABLE == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -314,7 +318,30 @@ jobs:
               ]
             }')
 
-          curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+          RESP=$(curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "$JSON" >/dev/null
+            -d "$JSON")
+
+          NEW_ID=$(printf "%s" "$RESP" | jq -r '.id // empty')
+          EMBED_LEN=$(printf "%s" "$RESP" | jq '.embeds | length // 0' 2>/dev/null || echo 0)
+
+          if [ "$EMBED_LEN" -eq 0 ] && [ -n "$NEW_ID" ]; then
+            # Delete stripped message and post one plain fallback
+            curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
+              -H "Authorization: Bot $TOKEN" >/dev/null
+
+            MSG="⚠️ No polled game currently fits the confirmed players.\n"
+            if [ -n "${EVENT_LINE}" ]; then
+              MSG="${MSG}\n${EVENT_LINE}"
+            fi
+            MSG="${MSG}\nConfirmed players (unique voters): ${NPLAYERS}\nConsider adjusting players or proposing an alternative.\n"
+
+            echo -e "$MSG" > announce_none_fallback.txt
+            MSG_CONTENT=$(jq -Rs . < announce_none_fallback.txt | sed 's/\\\\n/\\n/g')
+
+            curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+              -H "Authorization: Bot $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"content\": $MSG_CONTENT}" >/dev/null
+          fi
