@@ -19,13 +19,6 @@ jobs:
       - name: Install jq and curl
         run: sudo apt-get update && sudo apt-get install -y jq curl
 
-      - name: Ensure results file exists
-        run: |
-          if [ ! -f results/games_results.json ]; then
-            echo "results/games_results.json not found. Exiting."
-            exit 0
-          fi
-
       - name: Load event info (date/time/playersLimit)
         id: load_event
         run: |
@@ -81,7 +74,14 @@ jobs:
         if: steps.gate.outputs.should_post != 'true'
         run: exit 0
 
-      - name: Find latest poll message in channel (not just latest message)
+      - name: Ensure results file exists (needed to pick winner)
+        run: |
+          if [ ! -f results/games_results.json ]; then
+            echo "results/games_results.json not found. Exiting."
+            exit 0
+          fi
+
+      - name: Find latest poll message in channel
         id: fetch_message
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -109,22 +109,24 @@ jobs:
           echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
           echo "has_message=true" >> "$GITHUB_OUTPUT"
 
-      - name: Count unique voters from reactions (A–Z; count bots out; no >1 filter)
+      - name: Count unique voters across A–Z reactions (bots excluded, with pagination)
         if: steps.fetch_message.outputs.has_message == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          DISCORD_BOT_USER_ID: ${{ secrets.DISCORD_BOT_USER_ID }}
         run: |
           set -euo pipefail
 
-          # List all A–Z emojis that appear on the poll (any count)
-          jq -r '.reactions[]? | .emoji.name' .poll_message.json | sort -u > .poll_emojis_all.txt || true
-
-          # Keep only regional indicator letters (your A–Z list)
+          # Emoji whitelist A–Z (regional indicators)
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
-          : > .allowed_emojis.txt
-          for E in "${EMOJIS[@]}"; do echo "$E" >> .allowed_emojis.txt; done
-          grep -Fx -f .allowed_emojis.txt .poll_emojis_all.txt > .used_emojis.txt || true
+
+          # Quali di queste emoji sono effettivamente presenti sul messaggio?
+          jq -r '.reactions[]? | .emoji.name' .poll_message.json | sort -u > .poll_emojis_all.txt || true
+          : > .used_emojis.txt
+          for E in "${EMOJIS[@]}"; do
+            grep -Fxq "$E" .poll_emojis_all.txt && echo "$E" >> .used_emojis.txt
+          done
 
           if [ ! -s .used_emojis.txt ]; then
             echo "UNIQUE_VOTERS=0" >> $GITHUB_ENV
@@ -137,32 +139,44 @@ jobs:
             [ -z "$EMOJI" ] && continue
             ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
 
-            RESP_BODY=$(mktemp)
-            HTTP_CODE=$(curl -sS -o "$RESP_BODY" -w "%{http_code}" \
-              -H "Authorization: Bot $TOKEN" \
-              "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED?limit=100" \
-              || true)
+            AFTER=""
+            while : ; do
+              URL="https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED?limit=100"
+              [ -n "$AFTER" ] && URL="${URL}&after=${AFTER}"
 
-            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-              # Append NON-bot user IDs
-              jq -r '.[] | select(.bot != true) | .id' "$RESP_BODY" >> .all_voters.txt || true
-            else
-              echo "⚠️ Fetch failed for emoji [$EMOJI] HTTP $HTTP_CODE" >&2
-            fi
+              RESP_BODY=$(mktemp)
+              HTTP_CODE=$(curl -sS -o "$RESP_BODY" -w "%{http_code}" \
+                -H "Authorization: Bot $TOKEN" "$URL" || true)
+
+              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                # Escludi bot e il bot stesso
+                jq -r --arg bot "${DISCORD_BOT_USER_ID:-}" '
+                  .[] | select(.bot != true and (.id != $bot)) | .id
+                ' "$RESP_BODY" >> .all_voters.txt || true
+
+                COUNT=$(jq 'length' "$RESP_BODY")
+                if [ "$COUNT" -lt 100 ]; then
+                  break
+                else
+                  AFTER=$(jq -r '.[-1].id' "$RESP_BODY")
+                fi
+              else
+                echo "⚠️ Fetch failed for emoji [$EMOJI] HTTP $HTTP_CODE" >&2
+                break
+              fi
+            done
           done < .used_emojis.txt
 
+          # Dedup globale tra tutte le emoji
           if [ -s .all_voters.txt ]; then
             sort -u .all_voters.txt > .all_voters_uniq.txt
             UNIQUE_VOTERS=$(wc -l < .all_voters_uniq.txt | tr -d '[:space:]')
-            echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
-            echo "Unique voters (deduped): ${UNIQUE_VOTERS}"
           else
-            # Fallback if API calls failed or only bots present
-            MAX_VOTES=$(jq -r '[.votes[].votes] | max // 0' results/games_results.json)
-            echo "UNIQUE_VOTERS=${MAX_VOTES}" >> $GITHUB_ENV
-            echo "Fallback to max votes: ${MAX_VOTES}"
-            if [ "${MAX_VOTES:-0}" -eq 0 ]; then exit 0; fi
+            UNIQUE_VOTERS=0
           fi
+
+          echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
+          echo "Unique voters (deduped): ${UNIQUE_VOTERS}"
 
       - name: Choose a playable winner and set env
         if: steps.fetch_message.outputs.has_message == 'true'
@@ -205,105 +219,49 @@ jobs:
             echo "NO_SUITABLE=true" >> $GITHUB_ENV
           fi
 
-      - name: Post announcement to Discord (winner; single-message logic)
+      - name: Post announcement to Discord (single message, with limit if present)
         if: env.NO_SUITABLE == 'false' && env.CHOSEN_SLUG != ''
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
           TITLE: ${{ env.CHOSEN_TITLE }}
-          URL: ${{ env.CHOSEN_URL }}
-          MINP: ${{ env.CHOSEN_MIN }}
-          MAXP: ${{ env.CHOSEN_MAX }}
-          VOTES: ${{ env.CHOSEN_VOTES }}
-          NPLAYERS: ${{ env.UNIQUE_VOTERS }}
           EDATE: ${{ env.EVENT_DATE }}
           ETIME: ${{ env.EVENT_TIME }}
+          NPLAYERS: ${{ env.UNIQUE_VOTERS }}
           PLIMIT: ${{ env.PLAYERS_LIMIT }}
         run: |
           set -euo pipefail
 
-          EVENT_LINE=""
-          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Data ed ora: ${EDATE} ${ETIME}"; fi
+          # Righe messaggio
+          TITLE_LINE="**${TITLE}**"
+          DATE_LINE="Data e ora: ${EDATE} ${ETIME}"
 
-          JSON=$(jq -n \
-            --arg content "✅ Winner fits the table!" \
-            --arg gtitle "$TITLE" --arg gurl "$URL" \
-            --arg min "$MINP" --arg max "$MAXP" \
-            --arg votes "$VOTES" --arg players "$NPLAYERS" \
-            --arg eventline "$EVENT_LINE" \
-            '{content:$content, embeds:[{title:$gtitle, url:$gurl,
-              description: (
-                (if $eventline != "" then ($eventline + "\n") else "" end)
-                + "Giocatori: " + $min + "-" + $max
-                + "\nVoti: " + $votes
-                + "\nConfermati (votanti unici): " + $players
-              ),
-              color:5814783}] }')
+          if [ -n "${PLIMIT}" ] && [ "${PLIMIT}" != "null" ]; then
+            PLAYERS_LINE="Numero di Giocatori: ${NPLAYERS}/${PLIMIT}"
+          else
+            PLAYERS_LINE="Numero di Giocatori: ${NPLAYERS}"
+          fi
+
+          printf "%s\n%s\n%s\n" "$TITLE_LINE" "$DATE_LINE" "$PLAYERS_LINE" > announce_winner.txt
+          MSG_CONTENT=$(jq -Rs . < announce_winner.txt | sed 's/\\\\n/\\n/g')
 
           RESP_BODY=$(mktemp)
           HTTP_CODE=$(curl -sS -o "$RESP_BODY" -w "%{http_code}" -X POST \
             "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "$JSON" || true)
+            -d "{\"content\": $MSG_CONTENT}" || true)
 
-          POST_OK=0
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            NEW_ID=$(jq -r '.id // empty' "$RESP_BODY")
-            EMBED_LEN=$(jq '.embeds | length // 0' "$RESP_BODY")
-            if [ "$EMBED_LEN" -ge 1 ]; then
-              POST_OK=1
-            else
-              # delete stripped message and fallback
-              if [ -n "$NEW_ID" ]; then
-                curl -s -X DELETE "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$NEW_ID" \
-                  -H "Authorization: Bot $TOKEN" >/dev/null
-              fi
-            fi
+            # Mark announced only on success
+            echo "$EDATE" > .last_game_announcement
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .last_game_announcement
+            git commit -m "Record game announcement for ${EDATE}" || echo "No changes"
+            git push || echo "Nothing to push"
+          else
+            echo "Post failed with HTTP $HTTP_CODE"
+            cat "$RESP_BODY" || true
+            exit 1
           fi
-
-          # Mark announced so we don't post again today
-          echo "$EVENT_DATE" > .last_game_announcement
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .last_game_announcement
-          git commit -m "Record game announcement for ${EVENT_DATE}" || echo "No changes"
-          git push || echo "Nothing to push"
-
-      - name: Post announcement to Discord (winner; single-message logic)
-        if: env.NO_SUITABLE == 'false' && env.CHOSEN_SLUG != ''
-        env:
-          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
-          TITLE: ${{ env.CHOSEN_TITLE }}
-          URL: ${{ env.CHOSEN_URL }}
-          MINP: ${{ env.CHOSEN_MIN }}
-          MAXP: ${{ env.CHOSEN_MAX }}
-          VOTES: ${{ env.CHOSEN_VOTES }}
-          NPLAYERS: ${{ env.UNIQUE_VOTERS }}
-          EDATE: ${{ env.EVENT_DATE }}
-          ETIME: ${{ env.EVENT_TIME }}
-        run: |
-          set -euo pipefail
-
-          # Build the exact message format you requested
-          MSG="**${TITLE}**\n"
-          MSG="${MSG}Data e ora: ${EDATE} ${ETIME}\n"
-          MSG="${MSG}Numero di Giocatori: ${NPLAYERS}\n"
-
-          # JSON-escape and send as a single content message
-          echo -e "$MSG" > announce_winner.txt
-          MSG_CONTENT=$(jq -Rs . < announce_winner.txt | sed 's/\\\\n/\\n/g')
-
-          curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
-            -H "Authorization: Bot $TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"content\": $MSG_CONTENT}" >/dev/null
-
-          # Mark announced so we don't post again today
-          echo "$EVENT_DATE" > .last_game_announcement
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .last_game_announcement
-          git commit -m "Record game announcement for ${EVENT_DATE}" || echo "No changes"
-          git push || echo "Nothing to push"
