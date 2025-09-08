@@ -215,12 +215,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Build event line (only if we have date/time)
           EVENT_LINE=""
           if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then
             EVENT_LINE="Event: ${EDATE} ${ETIME}"
           fi
-          # Append playersLimit if provided
           if [ -n "${PLIMIT}" ]; then
             if [ -n "$EVENT_LINE" ]; then
               EVENT_LINE="${EVENT_LINE}  •  Players cap: ${PLIMIT}"
@@ -229,7 +227,7 @@ jobs:
             fi
           fi
 
-          # 1) Try EMBED (title is the hyperlink)
+          # Use proper jq conditional (if/then/else/end)
           JSON=$(jq -n \
             --arg gtitle "$TITLE" \
             --arg gurl "$URL" \
@@ -245,7 +243,7 @@ jobs:
                   title: $gtitle,
                   url: $gurl,
                   description:
-                    ( ( ($eventline != "") and ($eventline + "\n") or "" )
+                    ( (if $eventline != "" then ($eventline + "\n") else "" end)
                       + "Players: " + $min + "-" + $max
                       + "\nVotes: " + $votes
                       + "\nConfirmed players (unique voters): " + $players ),
@@ -259,11 +257,9 @@ jobs:
             -H "Content-Type: application/json" \
             -d "$JSON")
 
-          # If embeds are stripped or not allowed, Discord returns the message without embeds.
           EMBED_LEN=$(printf "%s" "$RESP" | jq '.embeds | length // 0' 2>/dev/null || echo 0)
 
           if [ "$EMBED_LEN" -eq 0 ]; then
-            # 2) Fallback: plain content with clickable URL (<...>) and event line
             MSG="✅ **Winner fits the table!**\n\n**${TITLE}** <${URL}>\n"
             if [ -n "${EVENT_LINE}" ]; then
               MSG="${MSG}${EVENT_LINE}\n"
@@ -310,7 +306,7 @@ jobs:
                 {
                   title: "⚠️ No polled game currently fits the confirmed players",
                   description:
-                    ( ( ($eventline != "") and ($eventline + "\n") or "" )
+                    ( (if $eventline != "" then ($eventline + "\n") else "" end)
                       + "Confirmed players (unique voters): " + $n
                       + "\nConsider adjusting players or proposing an alternative."),
                   color: 15158332
