@@ -219,13 +219,34 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
-          MSG="✅ **Winner fits the table!**\n\n**${TITLE}** <${URL}>\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
-          echo -e "$MSG" > announce_winner.txt
-          MSG_CONTENT=$(jq -Rs . < announce_winner.txt | sed 's/\\\\n/\\n/g')
+
+          # Use an embed to make the TITLE clickable
+          JSON=$(jq -n \
+            --arg title "✅ Winner fits the table!" \
+            --arg gtitle "$TITLE" \
+            --arg gurl "$URL" \
+            --arg min "$MINP" \
+            --arg max "$MAXP" \
+            --arg votes "$VOTES" \
+            --arg players "$NPLAYERS" \
+            '{
+              embeds: [
+                {
+                  title: $gtitle,
+                  url: $gurl,
+                  description: ("Players: " + $min + "-" + $max
+                                + "\nVotes: " + $votes
+                                + "\nConfirmed players (unique voters): " + $players),
+                  color: 5814783
+                }
+              ]
+            }')
+
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"content\": $MSG_CONTENT}" >/dev/null
+            -d "$JSON" >/dev/null
+            
 
       - name: Post announcement to Discord (no suitable game)
         if: env.NO_SUITABLE == 'true'
