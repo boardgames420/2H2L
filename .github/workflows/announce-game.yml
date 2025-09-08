@@ -2,7 +2,7 @@ name: Announce Game
 
 on:
   schedule:
-    - cron: "*/5 * * * *"  # Every 5 minutes
+    - cron: "*/10 * * * *"  # Every 10 minutes
   workflow_dispatch:
 
 permissions:
@@ -26,27 +26,36 @@ jobs:
             exit 0
           fi
 
-      - name: Get latest poll message from channel
+      - name: Find latest poll message in channel (not just latest message)
         id: fetch_message
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
         run: |
           set -euo pipefail
+          # Fetch the last 50 messages and pick the most recent one that contains the poll header text
           RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
-            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=1")
+            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=50")
 
-          COUNT=$(echo "$RESPONSE" | jq 'length')
-          if [ "$COUNT" -eq 0 ]; then
-            echo "No messages in channel; exiting."
+          # Prefer messages that include the exact helper phrase we post with the poll
+          POLL=$(echo "$RESPONSE" | jq -c '[.[] | select((.content // "") | contains("React with the emoji to vote:"))] | first')
+
+          # Fallback: try a looser match on the dice header if the phrase changes
+          if [ "$POLL" = "null" ] || [ -z "$POLL" ]; then
+            POLL=$(echo "$RESPONSE" | jq -c '[.[] | select((.content // "") | contains("Vote for the week"))] | first')
+          fi
+
+          if [ "$POLL" = "null" ] || [ -z "$POLL" ]; then
+            echo "Could not find a recent poll message. Exiting."
             echo "has_message=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "$RESPONSE" | jq '.[0]' > .poll_message.json
+          echo "$POLL" | jq '.' > .poll_message.json
+
           MESSAGE_ID=$(jq -r '.id' .poll_message.json)
           if [ -z "$MESSAGE_ID" ] || [ "$MESSAGE_ID" = "null" ]; then
-            echo "No valid latest message ID found; exiting."
+            echo "No valid poll message ID found; exiting."
             echo "has_message=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -54,7 +63,7 @@ jobs:
           echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
           echo "has_message=true" >> "$GITHUB_OUTPUT"
 
-      - name: Count unique voters (from actual message emojis)
+      - name: Count unique voters from reactions (regional A–Z only)
         if: steps.fetch_message.outputs.has_message == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -62,30 +71,36 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Regional indicator emojis A..Z used in the poll
+          # Allowed regional-indicator emojis A..Z
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
 
-          # Detect which emojis are present in the actual posted message
-          CONTENT=$(jq -r '.content' .poll_message.json | tr -d '\r')
-          printf "%s\n" "$CONTENT" > .poll_message_content.txt
-
-          : > .used_emojis.txt
+          # Build a newline-separated whitelist to check membership quickly
+          : > .allowed_emojis.txt
           for E in "${EMOJIS[@]}"; do
-            # lines like: "🇦 Game Title"
-            if grep -q "^$E " .poll_message_content.txt; then
-              echo "$E" >> .used_emojis.txt
-            fi
+            echo "$E" >> .allowed_emojis.txt
           done
 
+          # Gather which of the allowed emojis actually have reactions on the poll
+          jq -r '.reactions[]?.emoji.name' .poll_message.json > .reacted_emojis_raw.txt || true
+          : > .used_emojis.txt
+          while read -r EM; do
+            [ -z "$EM" ] && continue
+            if grep -Fxq "$EM" .allowed_emojis.txt; then
+              echo "$EM" >> .used_emojis.txt
+            fi
+          done < .reacted_emojis_raw.txt
+
+          # If none of the A–Z emojis have reactions, there are no voters yet
           if [ ! -s .used_emojis.txt ]; then
-            echo "No recognizable poll emojis found in message; exiting."
             echo "UNIQUE_VOTERS=0" >> $GITHUB_ENV
+            echo "No A–Z reactions found; exiting."
             exit 0
           fi
 
-          : > .all_voters.txt
+          sort -u .used_emojis.txt > .used_emojis_uniq.txt
 
           # Fetch reactors for each used emoji; ignore bot users; union IDs
+          : > .all_voters.txt
           while read -r EMOJI; do
             [ -z "$EMOJI" ] && continue
             ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
@@ -94,7 +109,7 @@ jobs:
               "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED?limit=100")
 
             echo "$USERS_RESPONSE" | jq -r '.[] | select(.bot != true) | .id' >> .all_voters.txt || true
-          done < .used_emojis.txt
+          done < .used_emojis_uniq.txt
 
           if [ -s .all_voters.txt ]; then
             sort -u .all_voters.txt > .all_voters_uniq.txt
@@ -106,7 +121,6 @@ jobs:
           echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
           echo "Unique voters detected: ${UNIQUE_VOTERS}"
 
-          # If nobody voted, stop quietly
           if [ "$UNIQUE_VOTERS" -eq 0 ]; then
             echo "No voters yet; exiting."
             exit 0
@@ -118,9 +132,6 @@ jobs:
           set -euo pipefail
 
           # Helper: get min/max players from a game JSON file.
-          # Supports:
-          # - minPlayers/maxPlayers or players_min/players_max
-          # - players: "1-4", "1–4", "1 to 4"
           get_minmax() {
             local file="$1"
             local MIN MAX
@@ -208,11 +219,9 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
-
           MSG="✅ **Winner fits the table!**\n\n**${TITLE}** (${URL})\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
           echo -e "$MSG" > announce_winner.txt
           MSG_CONTENT=$(jq -Rs . < announce_winner.txt | sed 's/\\\\n/\\n/g')
-
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
@@ -226,11 +235,9 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
-
           MSG="⚠️ No polled game currently fits the confirmed players.\n\nConfirmed players (unique voters): ${NPLAYERS}\nConsider adjusting players or proposing an alternative.\n"
           echo -e "$MSG" > announce_none.txt
           MSG_CONTENT=$(jq -Rs . < announce_none.txt | sed 's/\\\\n/\\n/g')
-
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
