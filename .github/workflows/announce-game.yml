@@ -33,7 +33,7 @@ jobs:
           CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
         run: |
           set -euo pipefail
-          # Fetch the last 50 messages and pick the most recent one that contains the poll header text
+          # Fetch the last 50 messages and pick the most recent one that contains the poll text
           RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
             "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=50")
 
@@ -66,7 +66,7 @@ jobs:
       - name: Count unique voters from reactions (regional A–Z only)
         if: steps.fetch_message.outputs.has_message == 'true'
         env:
-          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          TOKEN: ${{ secrets.Discord_BOT_TOKEN || secrets.DISCORD_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
         run: |
           set -euo pipefail
@@ -74,13 +74,11 @@ jobs:
           # Allowed regional-indicator emojis A..Z
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
 
-          # Build a newline-separated whitelist to check membership quickly
+          # Build a whitelist
           : > .allowed_emojis.txt
-          for E in "${EMOJIS[@]}"; do
-            echo "$E" >> .allowed_emojis.txt
-          done
+          for E in "${EMOJIS[@]}"; do echo "$E"; done > .allowed_emojis.txt
 
-          # Gather which of the allowed emojis actually have reactions on the poll
+          # Which of the allowed emojis actually have reactions on the poll?
           jq -r '.reactions[]?.emoji.name' .poll_message.json > .reacted_emojis_raw.txt || true
           : > .used_emojis.txt
           while read -r EM; do
@@ -90,7 +88,6 @@ jobs:
             fi
           done < .reacted_emojis_raw.txt
 
-          # If none of the A–Z emojis have reactions, there are no voters yet
           if [ ! -s .used_emojis.txt ]; then
             echo "UNIQUE_VOTERS=0" >> $GITHUB_ENV
             echo "No A–Z reactions found; exiting."
@@ -202,11 +199,10 @@ jobs:
             echo "CHOSEN_VOTES=$CHOSEN_VOTES" >> $GITHUB_ENV
             echo "NO_SUITABLE=false" >> $GITHUB_ENV
           else
-            echo "No suitable game found for ${UNIQUE_VOTERS} players."
             echo "NO_SUITABLE=true" >> $GITHUB_ENV
           fi
 
-      - name: Post announcement to Discord (winner)
+      - name: Post winner as an embed (clickable title)
         if: env.NO_SUITABLE == 'false' && env.CHOSEN_SLUG != ''
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -219,10 +215,7 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
-
-          # Use an embed to make the TITLE clickable
           JSON=$(jq -n \
-            --arg title "✅ Winner fits the table!" \
             --arg gtitle "$TITLE" \
             --arg gurl "$URL" \
             --arg min "$MINP" \
@@ -230,6 +223,7 @@ jobs:
             --arg votes "$VOTES" \
             --arg players "$NPLAYERS" \
             '{
+              content: "✅ Winner fits the table!",
               embeds: [
                 {
                   title: $gtitle,
@@ -246,9 +240,8 @@ jobs:
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
             -d "$JSON" >/dev/null
-            
 
-      - name: Post announcement to Discord (no suitable game)
+      - name: Post 'no suitable game' as an embed
         if: env.NO_SUITABLE == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -256,10 +249,20 @@ jobs:
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
         run: |
           set -euo pipefail
-          MSG="⚠️ No polled game currently fits the confirmed players.\n\nConfirmed players (unique voters): ${NPLAYERS}\nConsider adjusting players or proposing an alternative.\n"
-          echo -e "$MSG" > announce_none.txt
-          MSG_CONTENT=$(jq -Rs . < announce_none.txt | sed 's/\\\\n/\\n/g')
+          JSON=$(jq -n \
+            --arg players "$NPLAYERS" \
+            '{
+              embeds: [
+                {
+                  title: "⚠️ No polled game currently fits the confirmed players",
+                  description: ("Confirmed players (unique voters): " + $players
+                                + "\nConsider adjusting players or proposing an alternative."),
+                  color: 16753920
+                }
+              ]
+            }')
+
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
             -H "Authorization: Bot $TOKEN" \
             -H "Content-Type: application/json" \
-            -d "{\"content\": $MSG_CONTENT}" >/dev/null
+            -d "$JSON" >/dev/null
