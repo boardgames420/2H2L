@@ -109,44 +109,63 @@ jobs:
           echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
           echo "has_message=true" >> "$GITHUB_OUTPUT"
 
-      - name: Count unique voters from reactions (regional A–Z only)
-        if: steps.fetch_message.outputs.has_message == 'true'
-        env:
-          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
-        run: |
-          set -euo pipefail
-          EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
-          : > .allowed_emojis.txt
-          for E in "${EMOJIS[@]}"; do echo "$E" >> .allowed_emojis.txt; done
-          jq -r '.reactions[]?.emoji.name' .poll_message.json > .reacted_emojis_raw.txt || true
-          : > .used_emojis.txt
-          while read -r EM; do
-            [ -z "$EM" ] && continue
-            if grep -Fxq "$EM" .allowed_emojis.txt; then echo "$EM" >> .used_emojis.txt; fi
-          done < .reacted_emojis_raw.txt
-          if [ ! -s .used_emojis.txt ]; then
-            echo "UNIQUE_VOTERS=0" >> $GITHUB_ENV
-            echo "No A–Z reactions found; exiting."
-            exit 0
-          fi
-          sort -u .used_emojis.txt > .used_emojis_uniq.txt
-          : > .all_voters.txt
-          while read -r EMOJI; do
-            [ -z "$EMOJI" ] && continue
-            ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
-            USERS_RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
-              "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED?limit=100")
-            echo "$USERS_RESPONSE" | jq -r '.[] | select(.bot != true) | .id' >> .all_voters.txt || true
-          done < .used_emojis_uniq.txt
-          if [ -s .all_voters.txt ]; then
-            sort -u .all_voters.txt > .all_voters_uniq.txt
-            UNIQUE_VOTERS=$(wc -l < .all_voters_uniq.txt | tr -d '[:space:]')
-          else
-            UNIQUE_VOTERS=0
-          fi
-          echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
-          if [ "$UNIQUE_VOTERS" -eq 0 ]; then exit 0; fi
+      - name: Count unique voters from reactions (A–Z; count bots out; no >1 filter)
+          if: steps.fetch_message.outputs.has_message == 'true'
+          env:
+            TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+            CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          run: |
+            set -euo pipefail
+        
+            # List all A–Z emojis that appear on the poll (any count)
+            jq -r '.reactions[]? | .emoji.name' .poll_message.json | sort -u > .poll_emojis_all.txt || true
+        
+            # Keep only regional indicator letters (your A–Z list)
+            EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
+            : > .allowed_emojis.txt; for E in "${EMOJIS[@]}"; do echo "$E" >> .allowed_emojis.txt; done
+            grep -Fx -f .allowed_emojis.txt .poll_emojis_all.txt > .used_emojis.txt || true
+        
+            if [ ! -s .used_emojis.txt ]; then
+              echo "UNIQUE_VOTERS=0" >> $GITHUB_ENV
+              echo "No A–Z reactions found; exiting."
+              exit 0
+            fi
+        
+            : > .all_voters.txt
+            ANY_OK=0
+        
+            while read -r EMOJI; do
+              [ -z "$EMOJI" ] && continue
+              ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
+        
+              RESP_BODY=$(mktemp)
+              HTTP_CODE=$(curl -sS -o "$RESP_BODY" -w "%{http_code}" \
+                -H "Authorization: Bot $TOKEN" \
+                "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED?limit=100" \
+                || true)
+        
+              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+                ANY_OK=1
+                # Append NON-bot user IDs
+                jq -r '.[] | select(.bot != true) | .id' "$RESP_BODY" >> .all_voters.txt || true
+              else
+                echo "⚠️ Fetch failed for emoji [$EMOJI] HTTP $HTTP_CODE" >&2
+              fi
+            done < .used_emojis.txt
+        
+            if [ -s .all_voters.txt ]; then
+              sort -u .all_voters.txt > .all_voters_uniq.txt
+              UNIQUE_VOTERS=$(wc -l < .all_voters_uniq.txt | tr -d '[:space:]')
+              echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
+              echo "Unique voters (deduped): ${UNIQUE_VOTERS}"
+            else
+              # Only fallback if every API call failed or returned nothing non-bot
+              MAX_VOTES=$(jq -r '[.votes[].votes] | max // 0' results/games_results.json)
+              echo "UNIQUE_VOTERS=${MAX_VOTES}" >> $GITHUB_ENV
+              echo "Fallback to max votes: ${MAX_VOTES}"
+              if [ "${MAX_VOTES:-0}" -eq 0 ]; then exit 0; fi
+            fi
+        fi
 
       - name: Choose a playable winner and set env
         if: steps.fetch_message.outputs.has_message == 'true'
@@ -246,7 +265,7 @@ jobs:
             # Fallback: one plain message
             MSG="**${TITLE}**\n"
             if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}${EVENT_LINE}\n"; fi
-            MSG="${MSG}Numero di giocatori:${VOTES}"
+            MSG="${MSG}Numero di giocatori:${UNIQUE_VOTERS}"
             echo -e "$MSG" > announce_winner_fallback.txt
             MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
             curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
