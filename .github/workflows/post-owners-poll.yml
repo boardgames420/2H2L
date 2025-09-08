@@ -72,7 +72,7 @@ jobs:
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
           i=0
 
-          echo -e "🧩 **Game Owners – Will you be there next time?**\n\nReact with your emoji to confirm:\n" > owner_poll_message.txt
+          echo -e "**Chi ci sarà la prossima volta? Conferma se ci sarai con l'emoji relativa al tuo nome:**\n" > owner_poll_message.txt
 
           while read -r OWNER; do
             [ -z "$OWNER" ] && continue
