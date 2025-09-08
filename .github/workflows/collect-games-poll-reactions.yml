@@ -45,20 +45,24 @@ jobs:
           echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
           echo "$RESPONSE" | jq '.[0]' > .poll_message.json
 
-      - name: Generate results
+            - name: Generate results (robust)
         run: |
           set -euo pipefail
-          mkdir -p results/games
-          EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
+          export LC_ALL=C.UTF-8
+          export LANG=C.UTF-8
 
-          # Build a flat list "emoji count" from the poll message; tolerate no reactions
+          mkdir -p results/games
+
+          # Mappa fissa A–Z (max 26 opzioni)
+          declare -a EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
+
+          # Reactions "emoji count" dalla poll message (se non ci sono reactions, il file resta vuoto)
           jq -r '.reactions[]? | "\(.emoji.name) \(.count)"' .poll_message.json > .reaction_counts.txt || true
 
           NOW=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           TODAY=$(date -u +'%Y-%m-%d')
 
-          # Filter games based on present owners AND not coming soon (this was your ask)
-          # Expecting results/owners_results.json to contain: { "present": ["owner1", ...] }
+          # Filtra giochi: presenti tra i proprietari + non comingSoon, altrimenti solo non comingSoon
           if [ -f results/owners_results.json ]; then
             jq -n \
               --slurpfile games games/index.json \
@@ -67,32 +71,63 @@ jobs:
                | map(select(.owner as $o | $owners[0].present | index($o))
                      | select(.comingSoon != true))' > .filtered_games.json
           else
-            # If owners file missing, still exclude comingSoon games
             jq '[ .[] | select(.comingSoon != true) ]' games/index.json > .filtered_games.json
           fi
 
-          # If nothing to count, exit without writing noisy files
-          if [ "$(jq 'length' .filtered_games.json)" -eq 0 ]; then
+          TOTAL=$(jq 'length' .filtered_games.json)
+          if [ "$TOTAL" -eq 0 ]; then
             echo "No eligible games after filtering; exiting."
             exit 0
           fi
 
-          # Assemble results in stable order matching the posting workflow (same filter & order)
-          echo "{" > results/games_results.json
-          echo "  \"votes\": [" >> results/games_results.json
+          # Limita a 26 voci (quante le emoji disponibili). Se ne hai di più, tronca con avviso.
+          if [ "$TOTAL" -gt 26 ]; then
+            echo "⚠️  There are $TOTAL games; trimming to first 26 to match A–Z."
+            jq '.[0:26]' .filtered_games.json > .filtered_games_26.json
+            mv .filtered_games_26.json .filtered_games.json
+            TOTAL=26
+          fi
+
+          # Costruisci results/games_results.json
+          {
+            echo "{"
+            echo "  \"votes\": ["
+          } > results/games_results.json
 
           i=0
           first=1
-          jq -r '.[].slug' .filtered_games.json | while read -r SLUG; do
+
+          # Usa process substitution (no subshell) per non perdere lo stato di i se mai servisse
+          while read -r SLUG; do
             [ -z "$SLUG" ] && continue
             GAME_JSON="games/${SLUG}.json"
-            TITLE=$(jq -r '.title' "$GAME_JSON")
-            URL=$(jq -r '.url' "$GAME_JSON")
-            EMOJI="${EMOJIS[i]}"
 
-            RAW=$(grep -F "$EMOJI " .reaction_counts.txt | awk '{print $2}')
+            if [ ! -f "$GAME_JSON" ]; then
+              echo "⚠️  Missing $GAME_JSON, skipping." >&2
+              continue
+            fi
+
+            # Estrai con fallback a stringhe vuote, senza far fallire jq
+            TITLE=$(jq -r '.title // empty' "$GAME_JSON" 2>/dev/null || echo "")
+            URL=$(jq -r '.url // empty' "$GAME_JSON" 2>/dev/null || echo "")
+
+            if [ -z "$TITLE" ]; then
+              echo "⚠️  $GAME_JSON has no .title, skipping." >&2
+              continue
+            fi
+
+            # Emoji per questo indice
+            EMOJI="${EMOJIS[$i]:-}"
+            if [ -z "$EMOJI" ]; then
+              echo "⚠️  No emoji for index $i (out of A–Z), skipping remaining." >&2
+              break
+            fi
+
+            # Conta le reactions per quell’emoji (se non c’è, 0)
+            RAW=$(grep -F -- "$EMOJI " .reaction_counts.txt | awk '{print $2}' || true)
             VOTES=${RAW:-0}
-            # Subtract the bot's own reaction if any (same as your original logic)
+
+            # Sottrai la reaction del bot se il bot reagisce con le sue emoji
             if [ "$VOTES" -gt 0 ]; then VOTES=$((VOTES - 1)); fi
 
             if [ $first -eq 0 ]; then
@@ -100,15 +135,22 @@ jobs:
             fi
             first=0
 
-            echo "    {\"slug\": \"$SLUG\", \"title\": \"$TITLE\", \"url\": \"$URL\", \"votes\": $VOTES}" >> results/games_results.json
-            i=$((i + 1))
-          done
+            # Scrivi entry
+            printf '    {"slug": "%s", "title": "%s", "url": "%s", "votes": %s}' \
+              "$SLUG" "$TITLE" "$URL" "$VOTES" >> results/games_results.json
 
-          echo "  ]," >> results/games_results.json
-          echo "  \"generatedAt\": \"${NOW}\"" >> results/games_results.json
-          echo "}" >> results/games_results.json
+            i=$((i + 1))
+          done < <(jq -r '.[].slug' .filtered_games.json)
+
+          {
+            echo ""
+            echo "  ],"
+            echo "  \"generatedAt\": \"${NOW}\""
+            echo "}"
+          } >> results/games_results.json
 
           cp results/games_results.json "results/games/${TODAY}.json"
+
 
       - name: Commit results
         run: |
