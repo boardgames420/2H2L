@@ -26,6 +26,21 @@ jobs:
             exit 0
           fi
 
+      - name: Load event info (date/time/playersLimit)
+        id: load_event
+        run: |
+          set -euo pipefail
+          if [ ! -f events/upcoming.json ]; then
+            echo "events/upcoming.json not found. Continuing without event info."
+          fi
+          EVENT_DATE=$(jq -r '.date // empty' events/upcoming.json 2>/dev/null || true)
+          EVENT_TIME=$(jq -r '.time // empty' events/upcoming.json 2>/dev/null || true)
+          PLAYERS_LIMIT=$(jq -r '.playersLimit // empty' events/upcoming.json 2>/dev/null || true)
+
+          echo "EVENT_DATE=$EVENT_DATE" >> $GITHUB_ENV
+          echo "EVENT_TIME=$EVENT_TIME" >> $GITHUB_ENV
+          echo "PLAYERS_LIMIT=$PLAYERS_LIMIT" >> $GITHUB_ENV
+
       - name: Find latest poll message in channel (not just latest message)
         id: fetch_message
         env:
@@ -194,8 +209,25 @@ jobs:
           MAXP: ${{ env.CHOSEN_MAX }}
           VOTES: ${{ env.CHOSEN_VOTES }}
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
+          EDATE: ${{ env.EVENT_DATE }}
+          ETIME: ${{ env.EVENT_TIME }}
+          PLIMIT: ${{ env.PLAYERS_LIMIT }}
         run: |
           set -euo pipefail
+
+          # Build event line (only if we have date/time)
+          EVENT_LINE=""
+          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then
+            EVENT_LINE="Event: ${EDATE} ${ETIME}"
+          fi
+          # Append playersLimit if provided
+          if [ -n "${PLIMIT}" ]; then
+            if [ -n "$EVENT_LINE" ]; then
+              EVENT_LINE="${EVENT_LINE}  •  Players cap: ${PLIMIT}"
+            else
+              EVENT_LINE="Players cap: ${PLIMIT}"
+            fi
+          fi
 
           # 1) Try EMBED (title is the hyperlink)
           JSON=$(jq -n \
@@ -205,15 +237,18 @@ jobs:
             --arg max "$MAXP" \
             --arg votes "$VOTES" \
             --arg players "$NPLAYERS" \
+            --arg eventline "$EVENT_LINE" \
             '{
               content: "✅ Winner fits the table!",
               embeds: [
                 {
                   title: $gtitle,
                   url: $gurl,
-                  description: ("Players: " + $min + "-" + $max
-                                + "\nVotes: " + $votes
-                                + "\nConfirmed players (unique voters): " + $players),
+                  description:
+                    ( ( ($eventline != "") and ($eventline + "\n") or "" )
+                      + "Players: " + $min + "-" + $max
+                      + "\nVotes: " + $votes
+                      + "\nConfirmed players (unique voters): " + $players ),
                   color: 5814783
                 }
               ]
@@ -228,8 +263,13 @@ jobs:
           EMBED_LEN=$(printf "%s" "$RESP" | jq '.embeds | length // 0' 2>/dev/null || echo 0)
 
           if [ "$EMBED_LEN" -eq 0 ]; then
-            # 2) Fallback: plain content with clickable URL (<...>)
-            MSG="Game: **${TITLE}**\nPlayers: ${VOTES}\n"
+            # 2) Fallback: plain content with clickable URL (<...>) and event line
+            MSG="✅ **Winner fits the table!**\n\n**${TITLE}** <${URL}>\n"
+            if [ -n "${EVENT_LINE}" ]; then
+              MSG="${MSG}${EVENT_LINE}\n"
+            fi
+            MSG="${MSG}Players: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
+
             echo -e "$MSG" > announce_winner_fallback.txt
             MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
 
@@ -239,23 +279,40 @@ jobs:
               -d "{\"content\": $MSG_CONTENT}" >/dev/null
           fi
 
-
       - name: Post announcement to Discord (no suitable game - embed)
         if: env.NO_SUITABLE == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
+          EDATE: ${{ env.EVENT_DATE }}
+          ETIME: ${{ env.EVENT_TIME }}
+          PLIMIT: ${{ env.PLAYERS_LIMIT }}
         run: |
           set -euo pipefail
+          EVENT_LINE=""
+          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then
+            EVENT_LINE="Event: ${EDATE} ${ETIME}"
+          fi
+          if [ -n "${PLIMIT}" ]; then
+            if [ -n "$EVENT_LINE" ]; then
+              EVENT_LINE="${EVENT_LINE}  •  Players cap: ${PLIMIT}"
+            else
+              EVENT_LINE="Players cap: ${PLIMIT}"
+            fi
+          fi
+
           JSON=$(jq -n \
             --arg n "$NPLAYERS" \
+            --arg eventline "$EVENT_LINE" \
             '{
               embeds: [
                 {
                   title: "⚠️ No polled game currently fits the confirmed players",
-                  description: ("Confirmed players (unique voters): " + $n
-                                + "\nConsider adjusting players or proposing an alternative."),
+                  description:
+                    ( ( ($eventline != "") and ($eventline + "\n") or "" )
+                      + "Confirmed players (unique voters): " + $n
+                      + "\nConsider adjusting players or proposing an alternative."),
                   color: 15158332
                 }
               ]
