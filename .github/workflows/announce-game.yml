@@ -164,10 +164,6 @@ jobs:
 
           EVENT_LINE=""
           if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Event: ${EDATE} ${ETIME}"; fi
-          if [ -n "${PLIMIT}" ]; then
-            if [ -n "$EVENT_LINE" ]; then EVENT_LINE="${EVENT_LINE}  •  Players cap: ${PLIMIT}";
-            else EVENT_LINE="Players cap: ${PLIMIT}"; fi
-          fi
 
           # First try: ONE message with content + embed
           JSON=$(jq -n \
@@ -205,9 +201,9 @@ jobs:
           fi
 
           # Fallback: one plain message
-          MSG="✅ **Winner fits the table!**\n\n**${TITLE}** <${URL}>\n"
+          MSG="✅ **Game: ${TITLE}**\n"
           if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}${EVENT_LINE}\n"; fi
-          MSG="${MSG}Players: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
+          MSG="${MSG}Players: ${VOTES}"
           echo -e "$MSG" > announce_winner_fallback.txt
           MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
