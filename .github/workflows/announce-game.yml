@@ -201,7 +201,7 @@ jobs:
           fi
 
           # Fallback: one plain message
-          MSG="**Boardgame: ${TITLE}**\n"
+          MSG="**${TITLE}**\n"
           if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}${EVENT_LINE}\n"; fi
           MSG="${MSG}Numero di giocatori: ${VOTES}"
           echo -e "$MSG" > announce_winner_fallback.txt
