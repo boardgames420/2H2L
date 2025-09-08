@@ -1,0 +1,246 @@
+name: Announce Game
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"  # Every 5 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  assess_and_announce:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq and curl
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+
+      - name: Ensure results file exists
+        run: |
+          if [ ! -f results/games_results.json ]; then
+            echo "results/games_results.json not found. Exiting."
+            exit 0
+          fi
+
+      - name: Get latest poll message from channel
+        id: fetch_message
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+          RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
+            "https://discord.com/api/v10/channels/$CHANNEL_ID/messages?limit=1")
+
+          COUNT=$(echo "$RESPONSE" | jq 'length')
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No messages in channel; exiting."
+            echo "has_message=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "$RESPONSE" | jq '.[0]' > .poll_message.json
+          MESSAGE_ID=$(jq -r '.id' .poll_message.json)
+          if [ -z "$MESSAGE_ID" ] || [ "$MESSAGE_ID" = "null" ]; then
+            echo "No valid latest message ID found; exiting."
+            echo "has_message=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
+          echo "has_message=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build eligible games list (same filter as posting)
+        if: steps.fetch_message.outputs.has_message == 'true'
+        run: |
+          set -euo pipefail
+          # If owners' presence file exists, filter by present owners AND exclude comingSoon
+          if [ -f results/owners_results.json ]; then
+            jq -n \
+              --slurpfile games games/index.json \
+              --slurpfile owners results/owners_results.json \
+              '$games[0]
+               | map(select(.owner as $o | $owners[0].present | index($o))
+                     | select(.comingSoon != true))' > .eligible_games.json
+          else
+            # If missing, at least exclude comingSoon games
+            jq '[ .[] | select(.comingSoon != true) ]' games/index.json > .eligible_games.json
+          fi
+
+          if [ "$(jq 'length' .eligible_games.json)" -eq 0 ]; then
+            echo "No eligible games; exiting."
+            exit 0
+          fi
+
+      - name: Count unique voters (union of reactors for used emojis)
+        if: steps.fetch_message.outputs.has_message == 'true'
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+          EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
+
+          N_ELIGIBLE=$(jq 'length' .eligible_games.json)
+          if [ "$N_ELIGIBLE" -eq 0 ]; then
+            echo "N_ELIGIBLE=0" >> $GITHUB_ENV
+            echo "UNIQUE_VOTERS=0" >> $GITHUB_ENV
+            exit 0
+          fi
+          echo "N_ELIGIBLE=$N_ELIGIBLE" >> $GITHUB_ENV
+
+          : > .all_voters.txt
+
+          # For each emoji used (aligned to eligible games order), fetch reactors and collect unique non-bot user IDs
+          for (( i=0; i<"$N_ELIGIBLE"; i++ )); do
+            EMOJI="${EMOJIS[i]}"
+
+            # URL-encode the emoji
+            ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
+
+            # Fetch up to 100 users (Discord paginates; usually enough for small polls)
+            USERS_RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
+              "https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED?limit=100")
+
+            # Append non-bot user IDs
+            echo "$USERS_RESPONSE" | jq -r '.[] | select(.bot != true) | .id' >> .all_voters.txt || true
+          done
+
+          if [ -s .all_voters.txt ]; then
+            sort -u .all_voters.txt > .all_voters_uniq.txt
+            UNIQUE_VOTERS=$(wc -l < .all_voters_uniq.txt | tr -d '[:space:]')
+          else
+            UNIQUE_VOTERS=0
+          fi
+
+          echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
+          echo "Unique voters: ${UNIQUE_VOTERS}"
+
+          # If nobody voted, stop here quietly
+          if [ "$UNIQUE_VOTERS" -eq 0 ]; then
+            echo "No voters yet; exiting."
+            exit 0
+          fi
+
+      - name: Choose a playable winner and announce
+        if: steps.fetch_message.outputs.has_message == 'true'
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+        run: |
+          set -euo pipefail
+
+          # Helper to get min/max players from game JSON. Supports:
+          # - "minPlayers"/"maxPlayers" or "players_min"/"players_max"
+          # - "players": "1-4", "1–4", "1 to 4" (parsed)
+          get_minmax() {
+            local file="$1"
+            local MIN MAX
+
+            MIN=$(jq -r '(.minPlayers // .players_min // empty)' "$file")
+            MAX=$(jq -r '(.maxPlayers // .players_max // empty)' "$file")
+
+            if [ -z "$MIN" ] || [ "$MIN" = "null" ] || [ -z "$MAX" ] || [ "$MAX" = "null" ]; then
+              local PSTR
+              PSTR=$(jq -r '(.players // empty)' "$file")
+              if [ -n "$PSTR" ] && [ "$PSTR" != "null" ]; then
+                # Extract two integers from string like "1-4", "1–4", "1 to 4"
+                MIN=$(printf "%s" "$PSTR" | grep -Eo '[0-9]+' | sed -n '1p')
+                MAX=$(printf "%s" "$PSTR" | grep -Eo '[0-9]+' | sed -n '2p')
+              fi
+            fi
+
+            echo "${MIN:-}" "${MAX:-}"
+          }
+
+          UNIQUE_VOTERS="${UNIQUE_VOTERS:-0}"
+          echo "Evaluating with UNIQUE_VOTERS=${UNIQUE_VOTERS}"
+
+          # Sort votes desc and iterate to find first that fits UNIQUE_VOTERS
+          # (If tie, first in the file order is fine.)
+          jq -c '.votes | sort_by(-.votes)' results/games_results.json > .votes_sorted.json
+
+          CHOSEN_SLUG=""
+          CHOSEN_TITLE=""
+          CHOSEN_URL=""
+          CHOSEN_MIN=""
+          CHOSEN_MAX=""
+          CHOSEN_VOTES=""
+
+          idx=0
+          jq -c '.[]' .votes_sorted.json | while read -r ROW; do
+            SLUG=$(echo "$ROW" | jq -r '.slug')
+            TITLE=$(echo "$ROW" | jq -r '.title')
+            URL=$(echo "$ROW" | jq -r '.url')
+            VOTES=$(echo "$ROW" | jq -r '.votes')
+
+            GAME_FILE="games/${SLUG}.json"
+            if [ ! -f "$GAME_FILE" ]; then
+              continue
+            fi
+
+            read MIN MAX < <(get_minmax "$GAME_FILE")
+
+            # Fallbacks: if min/max missing, skip
+            if [ -z "$MIN" ] || [ -z "$MAX" ]; then
+              continue
+            fi
+
+            # Check if UNIQUE_VOTERS fits players range
+            if [ "$UNIQUE_VOTERS" -ge "$MIN" ] && [ "$UNIQUE_VOTERS" -le "$MAX" ]; then
+              echo "CHOSEN_SLUG=$SLUG" >> $GITHUB_ENV
+              echo "CHOSEN_TITLE=$TITLE" >> $GITHUB_ENV
+              echo "CHOSEN_URL=$URL" >> $GITHUB_ENV
+              echo "CHOSEN_MIN=$MIN" >> $GITHUB_ENV
+              echo "CHOSEN_MAX=$MAX" >> $GITHUB_ENV
+              echo "CHOSEN_VOTES=$VOTES" >> $GITHUB_ENV
+              exit 0
+            fi
+
+            idx=$((idx + 1))
+          done
+
+          # If we reach here, no suitable game found
+          echo "No suitable game found for ${UNIQUE_VOTERS} players." > .no_suitable.txt
+          echo "NO_SUITABLE=true" >> $GITHUB_ENV
+
+      - name: Post announcement to Discord (winner)
+        if: env.CHOSEN_SLUG != '' && env.NO_SUITABLE != 'true'
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          TITLE: ${{ env.CHOSEN_TITLE }}
+          URL: ${{ env.CHOSEN_URL }}
+          MINP: ${{ env.CHOSEN_MIN }}
+          MAXP: ${{ env.CHOSEN_MAX }}
+          VOTES: ${{ env.CHOSEN_VOTES }}
+          NPLAYERS: ${{ env.UNIQUE_VOTERS }}
+        run: |
+          set -euo pipefail
+          MSG="✅ **Winner fits the table!**\n\n**${TITLE}** (${URL})\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}"
+          JSON=$(jq -Rn --arg c "$MSG" '{content:$c}')
+
+          curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+            -H "Authorization: Bot $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$JSON" >/dev/null
+
+      - name: Post announcement to Discord (no suitable game)
+        if: env.NO_SUITABLE == 'true'
+        env:
+          TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          NPLAYERS: ${{ env.UNIQUE_VOTERS }}
+        run: |
+          set -euo pipefail
+          MSG="⚠️ No polled game currently fits **${NPLAYERS}** confirmed players. Consider adjusting players or proposing an alternative."
+          JSON=$(jq -Rn --arg c "$MSG" '{content:$c}')
+
+          curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
+            -H "Authorization: Bot $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$JSON" >/dev/null
