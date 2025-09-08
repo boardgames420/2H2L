@@ -229,7 +229,7 @@ jobs:
 
           if [ "$EMBED_LEN" -eq 0 ]; then
             # 2) Fallback: plain content with clickable URL (<...>)
-            MSG="✅ **Winner fits the table!**\n\n**${TITLE}** <${URL}>\nPlayers: ${MINP}-${MAXP}\nVotes: ${VOTES}\nConfirmed players (unique voters): ${NPLAYERS}\n"
+            MSG="Game: **${TITLE}**\nPlayers: ${VOTES}\n"
             echo -e "$MSG" > announce_winner_fallback.txt
             MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
 
