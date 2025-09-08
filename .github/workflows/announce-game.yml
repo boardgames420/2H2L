@@ -109,7 +109,7 @@ jobs:
           echo "MESSAGE_ID=$MESSAGE_ID" >> $GITHUB_ENV
           echo "has_message=true" >> "$GITHUB_OUTPUT"
 
-      - name: Count unique voters across A–Z reactions (bots excluded, with pagination)
+      - name: Count unique voters (strict A–Z + fallback all-reactions, with diagnostics)
         if: steps.fetch_message.outputs.has_message == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
@@ -118,65 +118,101 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Emoji whitelist A–Z (regional indicators)
+          mkdir -p debug
+          echo "Polling reactions from message $MESSAGE_ID in channel $CHANNEL_ID"
+
+          # Emoji sul messaggio (tutte)
+          jq -r '.reactions[]? | .emoji.name' .poll_message.json | sort -u > debug.reactions.all_emoji.txt || true
+          echo "Emojis on message:"; cat debug.reactions.all_emoji.txt || true
+
+          # Whitelist A–Z (regional indicators)
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
-
-          # Quali di queste emoji sono effettivamente presenti sul messaggio?
-          jq -r '.reactions[]? | .emoji.name' .poll_message.json | sort -u > .poll_emojis_all.txt || true
-          : > .used_emojis.txt
+          : > debug.reactions.used_letters.txt
           for E in "${EMOJIS[@]}"; do
-            grep -Fxq "$E" .poll_emojis_all.txt && echo "$E" >> .used_emojis.txt
+            grep -Fxq "$E" debug.reactions.all_emoji.txt && echo "$E" >> debug.reactions.used_letters.txt
           done
+          echo "A-Z emojis detected:"; cat debug.reactions.used_letters.txt || true
 
-          if [ ! -s .used_emojis.txt ]; then
-            echo "UNIQUE_VOTERS=0" >> $GITHUB_ENV
-            echo "No A–Z reactions found; exiting."
-            exit 0
-          fi
+          # Funzione per scaricare TUTTI gli utenti (con paginazione) di una reaction
+          fetch_users_for_emoji() {
+            local emoji="$1"
+            local encoded; encoded=$(printf "%s" "$emoji" | jq -sRr @uri)
+            local after=""
+            local tmp; tmp=$(mktemp)
 
-          : > .all_voters.txt
-          while read -r EMOJI; do
-            [ -z "$EMOJI" ] && continue
-            ENCODED=$(printf "%s" "$EMOJI" | jq -sRr @uri)
-
-            AFTER=""
+            : > "$tmp"
             while : ; do
-              URL="https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$ENCODED?limit=100"
-              [ -n "$AFTER" ] && URL="${URL}&after=${AFTER}"
-
-              RESP_BODY=$(mktemp)
-              HTTP_CODE=$(curl -sS -o "$RESP_BODY" -w "%{http_code}" \
-                -H "Authorization: Bot $TOKEN" "$URL" || true)
-
-              if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-                # Escludi bot e il bot stesso
-                jq -r --arg bot "${DISCORD_BOT_USER_ID:-}" '
-                  .[] | select(.bot != true and (.id != $bot)) | .id
-                ' "$RESP_BODY" >> .all_voters.txt || true
-
-                COUNT=$(jq 'length' "$RESP_BODY")
-                if [ "$COUNT" -lt 100 ]; then
+              local url="https://discord.com/api/v10/channels/$CHANNEL_ID/messages/$MESSAGE_ID/reactions/$encoded?limit=100"
+              [ -n "$after" ] && url="${url}&after=${after}"
+              local page; page=$(mktemp)
+              local code
+              code=$(curl -sS -o "$page" -w "%{http_code}" -H "Authorization: Bot $TOKEN" "$url" || true)
+              if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then
+                cat "$page" >> "$tmp"
+                local n; n=$(jq 'length' "$page")
+                if [ "$n" -lt 100 ]; then
                   break
                 else
-                  AFTER=$(jq -r '.[-1].id' "$RESP_BODY")
+                  after=$(jq -r '.[-1].id' "$page")
                 fi
               else
-                echo "⚠️ Fetch failed for emoji [$EMOJI] HTTP $HTTP_CODE" >&2
+                echo "⚠️  Fetch failed for emoji [$emoji] HTTP $code" >&2
                 break
               fi
             done
-          done < .used_emojis.txt
 
-          # Dedup globale tra tutte le emoji
-          if [ -s .all_voters.txt ]; then
-            sort -u .all_voters.txt > .all_voters_uniq.txt
-            UNIQUE_VOTERS=$(wc -l < .all_voters_uniq.txt | tr -d '[:space:]')
+            # Ritorna via stdout la lista di ID (uno per riga), filtrando bot e il bot stesso
+            jq -r --arg bot "${DISCORD_BOT_USER_ID:-}" '
+              .[]? | select(.bot != true and (.id != $bot)) | .id
+            ' "$tmp"
+          }
+
+          # --- Modalità STRICT: solo A–Z ---
+          : > debug/ids_letters_raw.txt
+          if [ -s debug.reactions.used_letters.txt ]; then
+            while read -r EM; do
+              [ -z "$EM" ] && continue
+              echo "Fetching users for letter: $EM"
+              fetch_users_for_emoji "$EM" | tee -a debug/ids_letters_raw.txt >/dev/null
+            done < debug.reactions.used_letters.txt
+          fi
+          sort -u debug/ids_letters_raw.txt > debug/ids_letters_unique.txt || true
+          COUNT_LETTERS=$(wc -l < debug/ids_letters_unique.txt | tr -d '[:space:]')
+          echo "Strict A–Z unique voters: $COUNT_LETTERS"
+
+          # --- Modalità ALL: tutte le emoji presenti (escluso bot) ---
+          : > debug/ids_all_raw.txt
+          if [ -s debug.reactions.all_emoji.txt ]; then
+            while read -r EM; do
+              [ -z "$EM" ] && continue
+              echo "Fetching users for emoji: $EM"
+              fetch_users_for_emoji "$EM" | tee -a debug/ids_all_raw.txt >/dev/null
+            done < debug.reactions.all_emoji.txt
+          fi
+          sort -u debug/ids_all_raw.txt > debug/ids_all_unique.txt || true
+          COUNT_ALL=$(wc -l < debug/ids_all_unique.txt | tr -d '[:space:]')
+          echo "All-reactions unique voters: $COUNT_ALL"
+
+          # --- Scelta del conteggio da usare ---
+          # Se ALL > LETTERS, probabilmente qualcuno ha votato con 🅰️/1️⃣/✅ ecc.
+          if [ "$COUNT_ALL" -gt "$COUNT_LETTERS" ]; then
+            echo "UNIQUE_VOTERS=${COUNT_ALL}" >> $GITHUB_ENV
+            cp debug/ids_all_unique.txt debug/ids_final_unique.txt
+            echo "Using ALL reactions count ($COUNT_ALL)."
           else
-            UNIQUE_VOTERS=0
+            echo "UNIQUE_VOTERS=${COUNT_LETTERS}" >> $GITHUB_ENV
+            cp debug/ids_letters_unique.txt debug/ids_final_unique.txt
+            echo "Using A–Z reactions count ($COUNT_LETTERS)."
           fi
 
-          echo "UNIQUE_VOTERS=${UNIQUE_VOTERS}" >> $GITHUB_ENV
-          echo "Unique voters (deduped): ${UNIQUE_VOTERS}"
+          echo "==== Diagnostics ===="
+          echo "DISCORD_BOT_USER_ID=${DISCORD_BOT_USER_ID:-<unset>}"
+          echo "Emojis on message:"; cat debug.reactions.all_emoji.txt || true
+          echo "A-Z emojis used:"; cat debug.reactions.used_letters.txt || true
+          echo "IDs (A–Z, unique):"; cat debug/ids_letters_unique.txt || true
+          echo "IDs (ALL, unique):"; cat debug/ids_all_unique.txt || true
+          echo "IDs (FINAL, unique):"; cat debug/ids_final_unique.txt || true
+
 
       - name: Choose a playable winner and set env
         if: steps.fetch_message.outputs.has_message == 'true'
