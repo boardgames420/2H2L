@@ -85,7 +85,7 @@ jobs:
         id: fetch_message
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          CHANNEL_ID: ${{ secrets.DISCORD_ANNOUNCEMENTS_CHANNEL_ID }}
         run: |
           set -euo pipefail
           RESPONSE=$(curl -s -H "Authorization: Bot $TOKEN" \
@@ -113,7 +113,7 @@ jobs:
         if: steps.fetch_message.outputs.has_message == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          CHANNEL_ID: ${{ secrets.DISCORD_ANNOUNCEMENTS_CHANNEL_ID }}
         run: |
           set -euo pipefail
           EMOJIS=(🇦 🇧 🇨 🇩 🇪 🇫 🇬 🇭 🇮 🇯 🇰 🇱 🇲 🇳 🇴 🇵 🇶 🇷 🇸 🇹 🇺 🇻 🇼 🇽 🇾 🇿)
@@ -193,7 +193,7 @@ jobs:
         if: env.NO_SUITABLE == 'false' && env.CHOSEN_SLUG != ''
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          CHANNEL_ID: ${{ secrets.DISCORD_ANNOUNCEMENTS_CHANNEL_ID }}
           TITLE: ${{ env.CHOSEN_TITLE }}
           URL: ${{ env.CHOSEN_URL }}
           MINP: ${{ env.CHOSEN_MIN }}
@@ -267,7 +267,7 @@ jobs:
         if: env.NO_SUITABLE == 'true'
         env:
           TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          CHANNEL_ID: ${{ secrets.DISCORD_GAMES_CHANNEL_ID }}
+          CHANNEL_ID: ${{ secrets.DISCORD_ANNOUNCEMENTS_CHANNEL_ID }}
           NPLAYERS: ${{ env.UNIQUE_VOTERS }}
           EDATE: ${{ env.EVENT_DATE }}
           ETIME: ${{ env.EVENT_TIME }}
