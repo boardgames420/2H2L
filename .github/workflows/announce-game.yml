@@ -163,7 +163,7 @@ jobs:
           set -euo pipefail
 
           EVENT_LINE=""
-          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Event: ${EDATE} ${ETIME}"; fi
+          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Data ed ora: ${EDATE} ${ETIME}"; fi
 
           # First try: ONE message with content + embed
           JSON=$(jq -n \
@@ -201,9 +201,9 @@ jobs:
           fi
 
           # Fallback: one plain message
-          MSG="✅ **Game: ${TITLE}**\n"
+          MSG="**Boardgame: ${TITLE}**\n"
           if [ -n "${EVENT_LINE}" ]; then MSG="${MSG}${EVENT_LINE}\n"; fi
-          MSG="${MSG}Players: ${VOTES}"
+          MSG="${MSG}Numero di giocatori: ${VOTES}"
           echo -e "$MSG" > announce_winner_fallback.txt
           MSG_CONTENT=$(jq -Rs . < announce_winner_fallback.txt | sed 's/\\\\n/\\n/g')
           curl -s -X POST "https://discord.com/api/v10/channels/$CHANNEL_ID/messages" \
@@ -223,11 +223,7 @@ jobs:
           set -euo pipefail
 
           EVENT_LINE=""
-          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Event: ${EDATE} ${ETIME}"; fi
-          if [ -n "${PLIMIT}" ]; then
-            if [ -n "$EVENT_LINE" ]; then EVENT_LINE="${EVENT_LINE}  •  Players cap: ${PLIMIT}";
-            else EVENT_LINE="Players cap: ${PLIMIT}"; fi
-          fi
+          if [ -n "${EDATE}" ] || [ -n "${ETIME}" ]; then EVENT_LINE="Data ed ora: ${EDATE} ${ETIME}"; fi
 
           # First try: content + embed
           JSON=$(jq -n \
