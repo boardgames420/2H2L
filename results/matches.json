@@ -61,6 +61,16 @@
     ]
   },
   {
+    "date": "2025-07-26",
+    "game": "dune-imperium",
+    "duration": "NA",
+    "players": [
+      { "name": "matteo", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "RushHD", "score": "NA" }
+    ]
+  },
+  {
     "date": "2025-07-31",
     "game": "blood-rage",
     "duration": "NA",
@@ -101,6 +111,18 @@
     "players": [
       { "name": "RushHD", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
+      { "name": "mattana", "score": "NA" },
+      { "name": "edo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-09-08",
+    "game": "the-witcher",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "peter", "score": "NA" },
       { "name": "mattana", "score": "NA" },
       { "name": "edo", "score": "NA" }
     ]
