@@ -126,5 +126,23 @@
       { "name": "mattana", "score": "NA" },
       { "name": "edo", "score": "NA" }
     ]
+  },
+  {
+    "date": "2025-09-13",
+    "game": "senjutsu",
+    "duration": "70'",
+    "players": [
+      { "name": "RushHD", "score": "2" },
+      { "name": "gasca98", "score": "0" }
+    ]
+  },
+  {
+    "date": "2025-09-13",
+    "game": "unicorn-overlord",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" }
+    ]
   }
 ]
