@@ -156,5 +156,16 @@
       { "name": "benny", "score": "NA" },
       { "name": "capo", "score": "NA" },           
     ]
+  },
+  {
+    "date": "2025-09-22",
+    "game": "marvel-zombies",
+    "duration": "NA",
+    "players": [
+      { "name": "peter", "score": "NA" },
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "benny", "score": "NA" }          
+    ]
   }
 ]
