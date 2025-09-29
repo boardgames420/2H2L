@@ -1,5 +1,10 @@
 [
   {
+    "slug": "bloodborne",
+    "owner": "capo",
+    "comingSoon": false
+  },
+  {
     "slug": "blood-rage",
     "owner": "gasca98",
     "comingSoon": false
@@ -47,6 +52,11 @@
   {
     "slug": "spqrisiko",
     "owner": "gasca98",
+    "comingSoon": false
+  },
+  {
+    "slug": "terraforming-mars",
+    "owner": "capo",
     "comingSoon": false
   },
   {
