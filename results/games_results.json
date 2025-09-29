@@ -1,18 +1,10 @@
 {
   "votes": [
-    {"slug": "blood-rage", "title": "Blood Rage", "url": "https://boardgamegeek.com/boardgame/170216/blood-rage", "votes": 0},
+    {"slug": "bloodborne", "title": "Bloodborne: The Board Game", "url": "https://boardgamegeek.com/boardgame/273330/bloodborne-the-board-game", "votes": 0},
     {"slug": "dune-imperium", "title": "Dune: Imperium", "url": "https://boardgamegeek.com/boardgame/316554/dune-imperium", "votes": 1},
-    {"slug": "magic", "title": "Magic: The Gathering", "url": "https://boardgamegeek.com/boardgame/463/magic-the-gathering", "votes": 0},
-    {"slug": "marvel-zombies", "title": "Marvel Zombies: A Zombicide Game", "url": "https://boardgamegeek.com/boardgame/351817/marvel-zombies-a-zombicide-game", "votes": 1},
-    {"slug": "senjutsu", "title": "Senjutsu: Battle For Japan", "url": "https://boardgamegeek.com/boardgame/343900/senjutsu-battle-for-japan", "votes": 0},
     {"slug": "skull", "title": "Skull", "url": "https://boardgamegeek.com/boardgame/92415/skull", "votes": 0},
-    {"slug": "spqrisiko", "title": "S.P.Q.RisiKo!", "url": "https://boardgamegeek.com/boardgame/21503/spqrisiko", "votes": 0},
-    {"slug": "the-witcher", "title": "The Witcher: Old World", "url": "https://boardgamegeek.com/boardgame/331106/the-witcher-old-world", "votes": 0},
-    {"slug": "unicorn-overlord", "title": "Unicorn Overlord: Official Card Game", "url": "https://boardgamegeek.com/boardgame/412062/unicorn-overlord-official-card-game", "votes": 1},
-    {"slug": "voidfall", "title": "Voidfall", "url": "https://boardgamegeek.com/boardgame/337627/voidfall", "votes": 0},
-    {"slug": "warhammer-legions", "title": "Warhammer: The Horus Heresy – Legions Imperialis", "url": "https://boardgamegeek.com/boardgame/408598/warhammer-the-horus-heresy-legions-imperialis", "votes": 0},
-    {"slug": "warhammer-underworlds-shadespire", "title": "Warhammer Underworlds: Shadespire", "url": "https://boardgamegeek.com/boardgame/224597/warhammer-underworlds-shadespire", "votes": 0},
-    {"slug": "zombicide-green-horde", "title": "Zombicide: Green Horde", "url": "https://boardgamegeek.com/boardgame/224710/zombicide-green-horde", "votes": 0}
+    {"slug": "terraforming-mars", "title": "Terraforming Mars", "url": "https://boardgamegeek.com/boardgame/167791/terraforming-mars", "votes": 1},
+    {"slug": "voidfall", "title": "Voidfall", "url": "https://boardgamegeek.com/boardgame/337627/voidfall", "votes": 0}
   ],
-  "generatedAt": "2025-09-29T08:49:56Z"
+  "generatedAt": "2025-09-29T08:59:30Z"
 }
