@@ -160,12 +160,23 @@
   {
     "date": "2025-09-22",
     "game": "marvel-zombies",
-    "duration": "NA",
+    "duration": "60'",
     "players": [
-      { "name": "peter", "score": "NA" },
-      { "name": "RushHD", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
-      { "name": "benny", "score": "NA" }          
+      { "name": "peter", "score": "1" },
+      { "name": "RushHD", "score": "1" },
+      { "name": "gasca98", "score": "1" },
+      { "name": "benny", "score": "1" }          
+    ]
+  },
+  {
+    "date": "2025-09-29",
+    "game": "marvel-zombies",
+    "duration": "90'",
+    "players": [
+      { "name": "edo", "score": "1" },
+      { "name": "RushHD", "score": "1" },
+      { "name": "gasca98", "score": "1" },
+      { "name": "benny", "score": "1" }          
     ]
   }
 ]
