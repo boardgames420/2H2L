@@ -9,22 +9,36 @@ async function loadUpcomingEvent() {
 
     const event = await res.json();
 
-    // Format date if provided in ISO format
+    // Format date (if ISO format)
     const formattedDate = new Date(event.date).toLocaleDateString();
 
     eventContainer.innerHTML = `
       <p>
-        <img src="assets/icons/calendar-purple.svg" class="emoji-icon" />
+        <img src="assets/icons/calendar-purple.svg" class="emoji-icon" alt="Date icon" />
         <strong>Date:</strong> ${formattedDate}
       </p>
       <p>
-        <img src="assets/icons/player-purple.svg" class="emoji-icon" />
+        <img src="assets/icons/time-purple.svg" class="emoji-icon" alt="Time icon" />
+        <strong>Start:</strong> ${event.time || 'TBD'}
+      </p>
+      <p>
+        <img src="assets/icons/player-purple.svg" class="emoji-icon" alt="Players icon" />
         <strong>Players:</strong> up to ${event.playersLimit} participants
       </p>
-      ${event.time ? `
       <p>
-        <img src="assets/icons/time-purple.svg" class="emoji-icon" />
-        <strong>Start:</strong> ${event.time}
+        <img src="assets/icons/place-purple.svg" class="emoji-icon" alt="Place icon" />
+        <strong>Where:</strong> 
+        <a href="https://maps.app.goo.gl/64kMEgfQyjjz3mZdA" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           style="color: #bb86fc; text-decoration: none; font-weight: bold;">
+          Stanza 1 del Centro Socio Culturale di Zanè
+        </a>
+      </p>
+      ${event.duration ? `
+      <p>
+        <img src="assets/icons/time-purple.svg" class="emoji-icon" alt="Duration icon" />
+        <strong>Duration:</strong> ${event.duration}
       </p>` : ''}
     `;
   } catch (err) {
