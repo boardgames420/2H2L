@@ -14,19 +14,19 @@ async function loadUpcomingEvent() {
 
     eventContainer.innerHTML = `
       <p>
-        <img src="assets/icons/calendar-purple.svg" class="emoji-icon" alt="Date icon" />
+        <img src="assets/icons/calendar-purple.svg" class="emoji-icon" />
         <strong>Date:</strong> ${formattedDate}
       </p>
       <p>
-        <img src="assets/icons/time-purple.svg" class="emoji-icon" alt="Time icon" />
+        <img src="assets/icons/time-purple.svg" class="emoji-icon" />
         <strong>Start:</strong> ${event.time || 'TBD'}
       </p>
       <p>
-        <img src="assets/icons/player-purple.svg" class="emoji-icon" alt="Players icon" />
+        <img src="assets/icons/player-purple.svg" class="emoji-icon" />
         <strong>Players:</strong> up to ${event.playersLimit} participants
       </p>
       <p>
-        <img src="assets/icons/place-purple.svg" class="emoji-icon" alt="Place icon" />
+        <img src="assets/icons/place-purple.svg" class="emoji-icon" />
         <strong>Where:</strong> 
         <a href="https://maps.app.goo.gl/64kMEgfQyjjz3mZdA" 
            target="_blank" 
@@ -34,11 +34,6 @@ async function loadUpcomingEvent() {
            style="color: #bb86fc; text-decoration: none; font-weight: bold;">
           Stanza 1 del Centro Socio Culturale di Zanè
         </a>
-      </p>
-      ${event.duration ? `
-      <p>
-        <img src="assets/icons/time-purple.svg" class="emoji-icon" alt="Duration icon" />
-        <strong>Duration:</strong> ${event.duration}
       </p>` : ''}
     `;
   } catch (err) {
