@@ -2,19 +2,41 @@ document.addEventListener('DOMContentLoaded', () => {
   const eventContainer = document.getElementById('event-details');
   const pollContainer = document.getElementById('poll-results');
 
-  async function loadUpcomingEvent() {
-    try {
-      const res = await fetch('events/upcoming.json');
-      const event = await res.json();
-      const formattedDate = new Date(event.date).toLocaleDateString();
-      eventContainer.innerHTML = `
-        <p><strong>Date:</strong> ${formattedDate}</p>
-        <p><strong>Players:</strong> up to ${event.playersLimit} participants</p>
-      `;
-    } catch (err) {
-      eventContainer.innerHTML = `<p><img src="assets/icons/warning-purple.svg" class="emoji-icon"> Unable to load event info.</p>`;
-    }
+async function loadUpcomingEvent() {
+  try {
+    const res = await fetch('events/upcoming.json');
+    if (!res.ok) throw new Error('Failed to fetch upcoming event data.');
+
+    const event = await res.json();
+
+    // Format date if provided in ISO format
+    const formattedDate = new Date(event.date).toLocaleDateString();
+
+    eventContainer.innerHTML = `
+      <p>
+        <img src="assets/icons/calendar-purple.svg" class="emoji-icon" />
+        <strong>Date:</strong> ${formattedDate}
+      </p>
+      <p>
+        <img src="assets/icons/player-purple.svg" class="emoji-icon" />
+        <strong>Players:</strong> up to ${event.playersLimit} participants
+      </p>
+      ${event.time ? `
+      <p>
+        <img src="assets/icons/time-purple.svg" class="emoji-icon" />
+        <strong>Start:</strong> ${event.time}
+      </p>` : ''}
+    `;
+  } catch (err) {
+    console.error('Failed to load upcoming event:', err);
+    eventContainer.innerHTML = `
+      <p>
+        <img src="assets/icons/warning-purple.svg" class="emoji-icon" alt="Warning icon" />
+        Unable to load event info.
+      </p>
+    `;
   }
+}
 
   async function loadPollResults() {
     try {
