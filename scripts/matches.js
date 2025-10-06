@@ -58,9 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <img src="assets/icons/calendar-purple.svg" class="emoji-icon" />: ${match.date}
               </span>
               <span>
-                <img src="assets/icons/time-purple.svg" class="emoji-icon" />: ${match.time}
-              </span>
-              <span>
                 <img src="assets/icons/player-purple.svg" class="emoji-icon" />: ${match.players.length}
               </span>
               <span>
