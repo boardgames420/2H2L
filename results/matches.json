@@ -178,5 +178,17 @@
       { "name": "gasca98", "score": "1" },
       { "name": "benny", "score": "1" }
     ]
+  },
+  {
+    "date": "2025-10-06",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "peter", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "tommy", "score": "NA" }
+    ]
   }
 ]
