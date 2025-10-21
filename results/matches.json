@@ -204,5 +204,16 @@
       { "name": "tommy", "score": "NA" },
       { "name": "fede", "score": "NA" }
     ]
+  },
+  {
+    "date": "2025-10-20",
+    "game": "the-witcher",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "benny", "score": "NA" },
+      { "name": "nema", "score": "NA" }
+    ]
   }
 ]
