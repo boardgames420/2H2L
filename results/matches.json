@@ -215,5 +215,14 @@
       { "name": "benny", "score": "NA" },
       { "name": "nema", "score": "NA" }
     ]
+  },
+  {
+    "date": "2025-10-24",
+    "game": "magic",
+    "duration": "90'",
+    "players": [
+      { "name": "RushHD", "score": "2" },
+      { "name": "gasca98", "score": "2" }
+    ]
   }
 ]
