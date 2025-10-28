@@ -224,5 +224,26 @@
       { "name": "RushHD", "score": "2" },
       { "name": "gasca98", "score": "2" }
     ]
+  },
+  {
+    "date": "2025-10-27",
+    "game": "dune-imperium",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "peter", "score": "NA" },
+      { "name": "amico_capo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-10-27",
+    "game": "eldritch-horror",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "0" },
+      { "name": "edo", "score": "0" },
+      { "name": "nema", "score": "0" }
+    ]
   }
 ]
