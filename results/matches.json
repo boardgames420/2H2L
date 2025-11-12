@@ -233,7 +233,7 @@
       { "name": "RushHD", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "peter", "score": "NA" },
-      { "name": "amico_capo", "score": "NA" }
+      { "name": "ema", "score": "NA" }
     ]
   },
   {
@@ -244,6 +244,41 @@
       { "name": "capo", "score": "0" },
       { "name": "edo", "score": "0" },
       { "name": "nema", "score": "0" }
+    ]
+  },
+  {
+    "date": "2025-11-03",
+    "game": "marvel-zombies",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "1" },
+      { "name": "gasca98", "score": "1" },
+      { "name": "peter", "score": "1" },
+      { "name": "benny", "score": "1" },
+      { "name": "nassi", "score": "1" },
+      { "name": "luca50", "score": "1" }
+    ]
+  },
+  {
+    "date": "2025-11-10",
+    "game": "dune-imperium",
+    "duration": "130'",
+    "players": [
+      { "name": "RushHD", "score": "10" },
+      { "name": "ema", "score": "9" },
+      { "name": "edo", "score": "8" },
+      { "name": "mattana", "score": "7" }
+    ]
+  },
+  {
+    "date": "2025-11-10",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca98", "score": "0" },
+      { "name": "nema", "score": "0" },
+      { "name": "andrea_fontana", "score": "0" },
+      { "name": "nicola_agostini", "score": "0" }
     ]
   }
 ]
