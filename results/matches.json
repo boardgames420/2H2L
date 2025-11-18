@@ -280,5 +280,18 @@
       { "name": "andrea_fontana", "score": "0" },
       { "name": "nicola_agostini", "score": "0" }
     ]
+  },
+  {
+    "date": "2025-11-17",
+    "game": "the-witcher",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "peter", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "luca_magic", "score": "NA" }
+    ]
   }
 ]
