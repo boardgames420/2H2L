@@ -293,5 +293,28 @@
       { "name": "cristina", "score": "NA" },
       { "name": "luca_magic", "score": "NA" }
     ]
+  },
+  {
+    "date": "2025-11-24",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca98", "score": "NA" },
+      { "name": "RushHD", "score": "NA" },
+      { "name": "peter", "score": "NA" },
+      { "name": "cristina", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-11-24",
+    "game": "eldritch-horror",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "0" },
+      { "name": "benny", "score": "0" },
+      { "name": "ema", "score": "0" },
+      { "name": "nicola_agostini", "score": "0" },
+      { "name": "nicola_brunale", "score": "0" }
+    ]
   }
 ]
