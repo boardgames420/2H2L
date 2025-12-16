@@ -1,5 +1,20 @@
 [
   {
+    "slug": "bang-the-bullet",
+    "owner": "capo",
+    "comingSoon": false
+  },
+  {
+    "slug": "bang",
+    "owner": "capo",
+    "comingSoon": false
+  },
+  {
+    "slug": "blood-rage-valhalla",
+    "owner": "gasca98",
+    "comingSoon": true
+  },
+  {
     "slug": "blood-rage",
     "owner": "gasca98",
     "comingSoon": false
@@ -78,6 +93,11 @@
     "slug": "the-lord-of-the-rings",
     "owner": "capo",
     "comingSoon": false
+  },
+  {
+    "slug": "the-witcher-legacy",
+    "owner": "gasca98",
+    "comingSoon": true
   },
   {
     "slug": "the-witcher",
