@@ -275,10 +275,10 @@
     "game": "blood-rage",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "0" },
-      { "name": "nema", "score": "0" },
-      { "name": "andrea_fontana", "score": "0" },
-      { "name": "nicola_agostini", "score": "0" }
+      { "name": "gasca98", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "andrea_fontana", "score": "NA" },
+      { "name": "nicola_agostini", "score": "NA" }
     ]
   },
   {
@@ -315,6 +315,39 @@
       { "name": "ema", "score": "0" },
       { "name": "nicola_agostini", "score": "0" },
       { "name": "nicola_brunale", "score": "0" }
+    ]
+  },
+  {
+    "date": "2025-12-01",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca98", "score": "NA" },
+      { "name": "peter", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "edo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-12-01",
+    "game": "dune-imperium",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "benny", "score": "NA" },
+      { "name": "ema", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-12-15",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca98", "score": "131" },
+      { "name": "RushHD", "score": "154" },
+      { "name": "ema", "score": "138" },
+      { "name": "edo", "score": "111" }
     ]
   }
 ]
