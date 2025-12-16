@@ -40,6 +40,11 @@
     "comingSoon": false
   },
   {
+    "slug": "mysterium",
+    "owner": "capo",
+    "comingSoon": false
+  },
+  {
     "slug": "nemesis-retaliation",
     "owner": "gasca98",
     "comingSoon": true
@@ -66,6 +71,11 @@
   },
   {
     "slug": "terraforming-mars",
+    "owner": "capo",
+    "comingSoon": false
+  },
+  {
+    "slug": "the-lord-of-the-rings",
     "owner": "capo",
     "comingSoon": false
   },
