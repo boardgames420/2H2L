@@ -342,12 +342,21 @@
   {
     "date": "2025-12-15",
     "game": "blood-rage",
-    "duration": "NA",
+    "duration": "100'",
     "players": [
       { "name": "gasca98", "score": "131" },
       { "name": "RushHD", "score": "154" },
       { "name": "ema", "score": "138" },
       { "name": "edo", "score": "111" }
+    ]
+  },
+  {
+    "date": "2025-12-15",
+    "game": "the-lord-of-the-rings",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "NA" },
+      { "name": "peter", "score": "NA" }
     ]
   }
 ]
