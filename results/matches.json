@@ -383,5 +383,28 @@
       { "name": "edo", "score": "NA" },
       { "name": "ema", "score": "NA" }
     ]
+  },
+  {
+    "date": "2026-01-12",
+    "game": "dune-imperium",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca98", "score": "NA" },
+      { "name": "RushHD", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "franci", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2025-12-22",
+    "game": "terraforming-mars",
+    "duration": "2026-01-12",
+    "players": [
+      { "name": "capo", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "edo", "score": "NA" },
+      { "name": "ema", "score": "NA" },
+      { "name": "luca_magic", "score": "NA" }
+    ]
   }
 ]
