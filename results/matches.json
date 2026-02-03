@@ -396,15 +396,48 @@
     ]
   },
   {
-    "date": "2025-12-22",
+    "date": "2026-01-12",
     "game": "terraforming-mars",
-    "duration": "2026-01-12",
+    "duration": "NA",
     "players": [
       { "name": "capo", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "edo", "score": "NA" },
       { "name": "ema", "score": "NA" },
       { "name": "luca_magic", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-01-19",
+    "game": "magic",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "edo", "score": "NA" },
+      { "name": "ema", "score": "NA" },
+      { "name": "luca_magic", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-01-19",
+    "game": "chess",
+    "duration": "NA",
+    "players": [
+      { "name": "RushHD", "score": "NA" },
+      { "name": "ema", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-02-02",
+    "game": "marvel-zombie",
+    "duration": "NA",
+    "players": [
+     { "name": "gasca98", "score": "NA" },
+      { "name": "RushHD", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "ema", "score": "NA" },
+      { "name": "benny", "score": "NA" }
     ]
   }
 ]
