@@ -433,11 +433,33 @@
     "game": "marvel-zombie",
     "duration": "NA",
     "players": [
-     { "name": "gasca98", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
       { "name": "RushHD", "score": "NA" },
       { "name": "cristina", "score": "NA" },
       { "name": "ema", "score": "NA" },
       { "name": "benny", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-02-09",
+    "game": "catan",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "NA" },
+      { "name": "peter", "score": "NA" },
+      { "name": "benny", "score": "NA" }
+      { "name": "amico_capo", "score": "NA" },
+    ]
+  },
+  {
+    "date": "2026-02-09",
+    "game": "terraforming-mars",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca98", "score": "NA" },
+      { "name": "RushHD", "score": "NA" },
+      { "name": "ema", "score": "NA" },
+      { "name": "nema", "score": "NA" }
     ]
   }
 ]
