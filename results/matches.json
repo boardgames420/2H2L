@@ -5,7 +5,7 @@
     "duration": "130'",
     "players": [
       { "name": "matteo", "score": 5 },
-      { "name": "gasca98", "score": 4 },
+      { "name": "gasca", "score": 4 },
       { "name": "ale", "score": 4 }
     ]
   },
@@ -18,7 +18,7 @@
       { "name": "peter", "score": 138 },
       { "name": "matteo", "score": 107 },
       { "name": "benny", "score": 72 },
-      { "name": "gasca98", "score": 68 }
+      { "name": "gasca", "score": 68 }
     ]
   },
   {
@@ -26,7 +26,7 @@
     "game": "warhammer-underworlds-shadespire",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" }
     ]
   },
@@ -36,7 +36,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" }
+      { "name": "gasca", "score": "NA" }
     ]
   },
   {
@@ -45,7 +45,7 @@
     "duration": "60'",
     "players": [
       { "name": "ale", "score": 5 },
-      { "name": "gasca98", "score": 3 }
+      { "name": "gasca", "score": 3 }
     ]
   },
   {
@@ -54,7 +54,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "mattana", "score": "NA" },
       { "name": "edo", "score": "NA" }
@@ -66,7 +66,7 @@
     "duration": "NA",
     "players": [
       { "name": "matteo", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" }
     ]
   },
@@ -76,7 +76,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "mattana", "score": "NA" },
       { "name": "peter", "score": "NA" }
@@ -88,7 +88,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "matteo", "score": "NA" }
     ]
@@ -99,7 +99,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "mattana", "score": "NA" },
       { "name": "edo", "score": "NA" }
     ]
@@ -110,7 +110,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "mattana", "score": "NA" },
       { "name": "edo", "score": "NA" }
     ]
@@ -121,7 +121,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "mattana", "score": "NA" },
       { "name": "edo", "score": "NA" }
@@ -133,7 +133,7 @@
     "duration": "70'",
     "players": [
       { "name": "ale", "score": "2" },
-      { "name": "gasca98", "score": "0" }
+      { "name": "gasca", "score": "0" }
     ]
   },
   {
@@ -142,7 +142,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" }
+      { "name": "gasca", "score": "NA" }
     ]
   },
   {
@@ -152,7 +152,7 @@
     "players": [
       { "name": "peter", "score": "NA" },
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "capo", "score": "NA" }    
     ]
@@ -164,7 +164,7 @@
     "players": [
       { "name": "peter", "score": "1" },
       { "name": "ale", "score": "1" },
-      { "name": "gasca98", "score": "1" },
+      { "name": "gasca", "score": "1" },
       { "name": "benny", "score": "1" }
     ]
   },
@@ -175,7 +175,7 @@
     "players": [
       { "name": "edo", "score": "1" },
       { "name": "ale", "score": "1" },
-      { "name": "gasca98", "score": "1" },
+      { "name": "gasca", "score": "1" },
       { "name": "benny", "score": "1" }
     ]
   },
@@ -185,7 +185,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "tommy", "score": "NA" }
@@ -197,7 +197,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "capo", "score": "NA" },
       { "name": "edo", "score": "NA" },
       { "name": "nema", "score": "NA" },
@@ -211,7 +211,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "nema", "score": "NA" }
     ]
@@ -222,7 +222,7 @@
     "duration": "90'",
     "players": [
       { "name": "ale", "score": "2" },
-      { "name": "gasca98", "score": "2" }
+      { "name": "gasca", "score": "2" }
     ]
   },
   {
@@ -231,7 +231,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "ema", "score": "NA" }
     ]
@@ -252,7 +252,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "1" },
-      { "name": "gasca98", "score": "1" },
+      { "name": "gasca", "score": "1" },
       { "name": "peter", "score": "1" },
       { "name": "benny", "score": "1" },
       { "name": "nassi", "score": "1" },
@@ -275,7 +275,7 @@
     "game": "blood-rage",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "andrea_fontana", "score": "NA" },
       { "name": "nicola_agostini", "score": "NA" }
@@ -287,7 +287,7 @@
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "cristina", "score": "NA" },
@@ -299,7 +299,7 @@
     "game": "blood-rage",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "cristina", "score": "NA" }
@@ -322,7 +322,7 @@
     "game": "blood-rage",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "cristina", "score": "NA" },
@@ -344,7 +344,7 @@
     "game": "blood-rage",
     "duration": "100'",
     "players": [
-      { "name": "gasca98", "score": "131" },
+      { "name": "gasca", "score": "131" },
       { "name": "ale", "score": "154" },
       { "name": "ema", "score": "138" },
       { "name": "edo", "score": "111" }
@@ -365,7 +365,7 @@
     "duration": "NA",
     "players": [
       { "name": "capo", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "edo", "score": "NA" },
@@ -378,7 +378,7 @@
     "game": "poker",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" },
       { "name": "edo", "score": "NA" },
       { "name": "ema", "score": "NA" }
@@ -389,7 +389,7 @@
     "game": "dune-imperium",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" },
       { "name": "cristina", "score": "NA" },
       { "name": "franci", "score": "NA" }
@@ -412,7 +412,7 @@
     "game": "magic",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "cristina", "score": "NA" }
     ]
@@ -431,7 +431,7 @@
     "game": "marvel-zombie",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" },
       { "name": "cristina", "score": "NA" },
       { "name": "ema", "score": "NA" },
@@ -454,7 +454,7 @@
     "game": "terraforming-mars",
     "duration": "NA",
     "players": [
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" },
       { "name": "ema", "score": "NA" },
       { "name": "nema", "score": "NA" }
@@ -466,7 +466,7 @@
     "duration": "NA",
     "players": [
       { "name": "capo", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "benny", "score": "NA" }
     ]
   },
@@ -486,7 +486,7 @@
     "duration": "NA",
     "players": [
       { "name": "capo", "score": "NA" },
-      { "name": "gasca98", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "ale", "score": "NA" },
       { "name": "nema", "score": "NA" },
