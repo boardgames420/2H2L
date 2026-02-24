@@ -6,7 +6,7 @@
     "players": [
       { "name": "matteo", "score": 5 },
       { "name": "gasca98", "score": 4 },
-      { "name": "RushHD", "score": 4 }
+      { "name": "ale", "score": 4 }
     ]
   },
   {
@@ -14,7 +14,7 @@
     "game": "blood-rage",
     "duration": "90'",
     "players": [
-      { "name": "RushHD", "score": 158 },
+      { "name": "ale", "score": 158 },
       { "name": "peter", "score": 138 },
       { "name": "matteo", "score": 107 },
       { "name": "benny", "score": 72 },
@@ -27,7 +27,7 @@
     "duration": "NA",
     "players": [
       { "name": "gasca98", "score": "NA" },
-      { "name": "RushHD", "score": "NA" }
+      { "name": "ale", "score": "NA" }
     ]
   },
   {
@@ -35,7 +35,7 @@
     "game": "senjutsu",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" }
     ]
   },
@@ -44,7 +44,7 @@
     "game": "senjutsu",
     "duration": "60'",
     "players": [
-      { "name": "RushHD", "score": 5 },
+      { "name": "ale", "score": 5 },
       { "name": "gasca98", "score": 3 }
     ]
   },
@@ -53,7 +53,7 @@
     "game": "marvel-zombies",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "mattana", "score": "NA" },
@@ -67,7 +67,7 @@
     "players": [
       { "name": "matteo", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
-      { "name": "RushHD", "score": "NA" }
+      { "name": "ale", "score": "NA" }
     ]
   },
   {
@@ -75,7 +75,7 @@
     "game": "blood-rage",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "mattana", "score": "NA" },
@@ -87,7 +87,7 @@
     "game": "magic",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "matteo", "score": "NA" }
@@ -98,7 +98,7 @@
     "game": "blood-rage",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "mattana", "score": "NA" },
       { "name": "edo", "score": "NA" }
@@ -109,7 +109,7 @@
     "game": "dune-imperium",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "mattana", "score": "NA" },
       { "name": "edo", "score": "NA" }
@@ -120,7 +120,7 @@
     "game": "the-witcher",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "mattana", "score": "NA" },
@@ -132,7 +132,7 @@
     "game": "senjutsu",
     "duration": "70'",
     "players": [
-      { "name": "RushHD", "score": "2" },
+      { "name": "ale", "score": "2" },
       { "name": "gasca98", "score": "0" }
     ]
   },
@@ -141,7 +141,7 @@
     "game": "unicorn-overlord",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" }
     ]
   },
@@ -151,7 +151,7 @@
     "duration": "NA",
     "players": [
       { "name": "peter", "score": "NA" },
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "capo", "score": "NA" }    
@@ -163,7 +163,7 @@
     "duration": "60'",
     "players": [
       { "name": "peter", "score": "1" },
-      { "name": "RushHD", "score": "1" },
+      { "name": "ale", "score": "1" },
       { "name": "gasca98", "score": "1" },
       { "name": "benny", "score": "1" }
     ]
@@ -174,7 +174,7 @@
     "duration": "90'",
     "players": [
       { "name": "edo", "score": "1" },
-      { "name": "RushHD", "score": "1" },
+      { "name": "ale", "score": "1" },
       { "name": "gasca98", "score": "1" },
       { "name": "benny", "score": "1" }
     ]
@@ -184,7 +184,7 @@
     "game": "blood-rage",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "nema", "score": "NA" },
@@ -196,7 +196,7 @@
     "game": "eldritch-horror",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "capo", "score": "NA" },
       { "name": "edo", "score": "NA" },
@@ -210,7 +210,7 @@
     "game": "the-witcher",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "nema", "score": "NA" }
@@ -221,7 +221,7 @@
     "game": "magic",
     "duration": "90'",
     "players": [
-      { "name": "RushHD", "score": "2" },
+      { "name": "ale", "score": "2" },
       { "name": "gasca98", "score": "2" }
     ]
   },
@@ -230,7 +230,7 @@
     "game": "dune-imperium",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "ema", "score": "NA" }
@@ -251,7 +251,7 @@
     "game": "marvel-zombies",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "1" },
+      { "name": "ale", "score": "1" },
       { "name": "gasca98", "score": "1" },
       { "name": "peter", "score": "1" },
       { "name": "benny", "score": "1" },
@@ -264,7 +264,7 @@
     "game": "dune-imperium",
     "duration": "130'",
     "players": [
-      { "name": "RushHD", "score": "10" },
+      { "name": "ale", "score": "10" },
       { "name": "ema", "score": "9" },
       { "name": "edo", "score": "8" },
       { "name": "mattana", "score": "7" }
@@ -286,7 +286,7 @@
     "game": "the-witcher",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "peter", "score": "NA" },
@@ -300,7 +300,7 @@
     "duration": "NA",
     "players": [
       { "name": "gasca98", "score": "NA" },
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "peter", "score": "NA" },
       { "name": "cristina", "score": "NA" }
     ]
@@ -334,7 +334,7 @@
     "game": "dune-imperium",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "benny", "score": "NA" },
       { "name": "ema", "score": "NA" }
     ]
@@ -345,7 +345,7 @@
     "duration": "100'",
     "players": [
       { "name": "gasca98", "score": "131" },
-      { "name": "RushHD", "score": "154" },
+      { "name": "ale", "score": "154" },
       { "name": "ema", "score": "138" },
       { "name": "edo", "score": "111" }
     ]
@@ -366,7 +366,7 @@
     "players": [
       { "name": "capo", "score": "NA" },
       { "name": "gasca98", "score": "NA" },
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "nema", "score": "NA" },
       { "name": "edo", "score": "NA" },
       { "name": "ema", "score": "NA" },
@@ -379,7 +379,7 @@
     "duration": "NA",
     "players": [
       { "name": "gasca98", "score": "NA" },
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "edo", "score": "NA" },
       { "name": "ema", "score": "NA" }
     ]
@@ -390,7 +390,7 @@
     "duration": "NA",
     "players": [
       { "name": "gasca98", "score": "NA" },
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "cristina", "score": "NA" },
       { "name": "franci", "score": "NA" }
     ]
@@ -422,7 +422,7 @@
     "game": "chess",
     "duration": "NA",
     "players": [
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "ema", "score": "NA" }
     ]
   },
@@ -432,7 +432,7 @@
     "duration": "NA",
     "players": [
       { "name": "gasca98", "score": "NA" },
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "cristina", "score": "NA" },
       { "name": "ema", "score": "NA" },
       { "name": "benny", "score": "NA" }
@@ -445,7 +445,7 @@
     "players": [
       { "name": "capo", "score": "NA" },
       { "name": "peter", "score": "NA" },
-      { "name": "benny", "score": "NA" }
+      { "name": "benny", "score": "NA" },
       { "name": "amico_capo", "score": "NA" },
     ]
   },
@@ -455,9 +455,42 @@
     "duration": "NA",
     "players": [
       { "name": "gasca98", "score": "NA" },
-      { "name": "RushHD", "score": "NA" },
+      { "name": "ale", "score": "NA" },
       { "name": "ema", "score": "NA" },
       { "name": "nema", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-02-16",
+    "game": "marvel-zombie",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "benny", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-02-16",
+    "game": "catan",
+    "duration": "NA",
+    "players": [
+      { "name": "ale", "score": "NA" },
+      { "name": "ema", "score": "NA" },
+      { "name": "edo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-02-23",
+    "game": "marvel-zombie",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "NA" },
+      { "name": "gasca98", "score": "NA" },
+      { "name": "benny", "score": "NA" },
+      { "name": "ale", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "cristina", "score": "NA" }
     ]
   }
 ]
