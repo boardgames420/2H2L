@@ -4,7 +4,7 @@
   "players": "1-5",
   "playersWithExpansion": 6,
   "time": "90–150",
-  "owner": "gasca98",
+  "owner": "gasca",
   "description": "Adventure game set in the Witcher universe, where players are rival monster-hunters.",
   "expansions": [
     {
@@ -15,3 +15,4 @@
     }
   ]
 }
+
