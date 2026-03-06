@@ -492,5 +492,24 @@
       { "name": "nema", "score": "NA" },
       { "name": "cristina", "score": "NA" }
     ]
+  },
+  {
+    "date": "2026-03-02",
+    "game": "catan",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca", "score": "NA" },
+      { "name": "ema", "score": "NA" },
+      { "name": "edo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-03-02",
+    "game": "the-lord-of-the-rings",
+    "duration": "NA",
+    "players": [
+      { "name": "ale", "score": "NA" },
+      { "name": "capo", "score": "NA" }
+    ]
   }
 ]
