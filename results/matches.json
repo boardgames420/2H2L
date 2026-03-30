@@ -511,5 +511,57 @@
       { "name": "ale", "score": "NA" },
       { "name": "capo", "score": "NA" }
     ]
+  },
+  {
+    "date": "2026-03-09",
+    "game": "blood-rage",
+    "duration": "160'",
+    "players": [
+      { "name": "ale", "score": "136" },
+      { "name": "gasca", "score": "142" },
+      { "name": "cristina", "score": "114" }
+    ]
+  },
+  {
+    "date": "2026-03-09",
+    "game": "catan",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "136" },
+      { "name": "edo", "score": "142" },
+      { "name": "ema", "score": "114" }
+    ]
+  },
+  {
+    "date": "2026-03-16",
+    "game": "dune-imperium",
+    "duration": "NA",
+    "players": [
+      { "name": "ale", "score": "9" },
+      { "name": "gasca", "score": "7" },
+      { "name": "ema", "score": "11" }
+    ]
+  },
+  {
+    "date": "2026-03-23",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "ale", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "marta", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-03-23",
+    "game": "catan",
+    "duration": "NA",
+    "players": [
+      { "name": "capo", "score": "NA" },
+      { "name": "edo", "score": "NA" },
+      { "name": "ema", "score": "NA" },
+      { "name": "peter", "score": "NA" }
+    ]
   }
 ]
