@@ -544,7 +544,7 @@
   },
   {
     "date": "2026-03-23",
-    "game": "blood-rage",
+    "game": "senjutsu",
     "duration": "NA",
     "players": [
       { "name": "ale", "score": "NA" },
@@ -562,6 +562,27 @@
       { "name": "edo", "score": "NA" },
       { "name": "ema", "score": "NA" },
       { "name": "peter", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-03-30",
+    "game": "senjutsu",
+    "duration": "NA",
+    "players": [
+      { "name": "peter", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
+      { "name": "capo", "score": "NA" },
+      { "name": "benny", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-03-30",
+    "game": "terraforming-mars",
+    "duration": "120'",
+    "players": [
+      { "name": "ale", "score": "78" },
+      { "name": "nema", "score": "50" },
+      { "name": "ema", "score": "65" }
     ]
   }
 ]
