@@ -584,5 +584,39 @@
       { "name": "nema", "score": "50" },
       { "name": "ema", "score": "65" }
     ]
+  },
+  {
+    "date": "2026-04-13",
+    "game": "catan",
+    "duration": "90'",
+    "players": [
+      { "name": "ale", "score": "9" },
+      { "name": "gasca", "score": "6" },
+      { "name": "edo", "score": "10" },
+      { "name": "capo", "score": "8" }
+    ]
+  },
+  {
+    "date": "2026-04-27",
+    "game": "poker",
+    "duration": "NA",
+    "players": [
+      { "name": "ale", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "ema", "score": "NA" },
+      { "name": "gasca", "score": "NA" },
+      { "name": "cristina", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-05-04",
+    "game": "warhammer-underworlds-shadespire",
+    "duration": "NA",
+    "players": [
+      { "name": "ale", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "marta", "score": "NA" },
+      { "name": "gasca", "score": "NA" }
+    ]
   }
 ]
