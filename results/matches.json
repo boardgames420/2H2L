@@ -618,5 +618,25 @@
       { "name": "marta", "score": "NA" },
       { "name": "gasca", "score": "NA" }
     ]
+  },
+  {
+    "date": "2026-05-18",
+    "game": "voidfall",
+    "duration": "NA",
+    "players": [
+      { "name": "ale", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "ema", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-05-18",
+    "game": "nemesis-retaliation",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "benny", "score": "NA" }
+    ]
   }
 ]
