@@ -35,6 +35,11 @@
     "comingSoon": true
   },
   {
+    "slug": "diplomacy",
+    "owner": "nema",
+    "comingSoon": false
+  },
+  {
     "slug": "dune-imperium",
     "owner": "ale",
     "comingSoon": false
@@ -67,7 +72,7 @@
   {
     "slug": "nemesis-retaliation",
     "owner": "gasca",
-    "comingSoon": true
+    "comingSoon": false
   },
   {
     "slug": "owners",
