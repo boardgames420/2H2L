@@ -638,5 +638,17 @@
       { "name": "nema", "score": "NA" },
       { "name": "benny", "score": "NA" }
     ]
+  },
+  {
+    "date": "2026-05-25",
+    "game": "nemesis-retaliation",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca", "score": "NA" },
+      { "name": "ale", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "nicola", "score": "NA" },
+      { "name": "cristina_nicola", "score": "NA" }
+    ]
   }
 ]
