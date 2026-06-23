@@ -650,5 +650,51 @@
       { "name": "nicola", "score": "NA" },
       { "name": "cristina_nicola", "score": "NA" }
     ]
+  },
+  {
+    "date": "2026-06-01",
+    "game": "diplomacy",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca", "score": "NA" },
+      { "name": "nema", "score": "NA" },
+      { "name": "ale", "score": "NA" },
+      { "name": "cristina", "score": "NA" },
+      { "name": "franci", "score": "NA" },
+      { "name": "capo", "score": "NA" },
+      { "name": "edo", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-06-08",
+    "game": "nemesis-retaliation",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca", "score": "NA" },
+      { "name": "ale", "score": "NA" },
+      { "name": "benny", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-06-15",
+    "game": "blood-rage",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca", "score": "158" },
+      { "name": "ale", "score": "188" },
+      { "name": "benny", "score": "89" },
+      { "name": "edo", "score": "106" }
+    ]
+  },
+  {
+    "date": "2026-06-22",
+    "game": "catan",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca", "score": "NA" },
+      { "name": "ale", "score": "NA" },
+      { "name": "capo", "score": "NA" },
+      { "name": "mattana", "score": "NA" }
+    ]
   }
 ]
