@@ -678,7 +678,7 @@
   {
     "date": "2026-06-15",
     "game": "blood-rage",
-    "duration": "NA",
+    "duration": "100'",
     "players": [
       { "name": "gasca", "score": "158" },
       { "name": "ale", "score": "188" },
@@ -693,6 +693,18 @@
     "players": [
       { "name": "gasca", "score": "NA" },
       { "name": "ale", "score": "NA" },
+      { "name": "capo", "score": "NA" },
+      { "name": "mattana", "score": "NA" }
+    ]
+  },
+  {
+    "date": "2026-06-29",
+    "game": "nemesis-retaliation",
+    "duration": "NA",
+    "players": [
+      { "name": "gasca", "score": "NA" },
+      { "name": "ale", "score": "NA" },
+      { "name": "nema", "score": "NA" },
       { "name": "capo", "score": "NA" },
       { "name": "mattana", "score": "NA" }
     ]
